@@ -23,6 +23,10 @@ const sections = [
     body: "Distances are approximate straight-line distances calculated from coordinates, not walking or driving routes. For turn-by-turn directions, CityMate links you to an external map app.",
   },
   {
+    title: "Urdu, sound and voice",
+    body: "You can ask Mate in English or Urdu, and Mate replies in your language. Sound is off until you turn it on. The night-city ambience and chimes are generated live in your browser, with no audio files. When Mate reads a reply aloud, it uses your device's own voice, so nothing is sent anywhere. Some devices don't include an Urdu voice.",
+  },
+  {
     title: "Your privacy",
     body: "Your location is used only after you tap “Near me” and allow it. It is rounded to roughly 10 m before reaching our server, is never placed in a shareable link, and is not stored. Outside our City Packs, a further-rounded location (about 100 m) is sent to public Overpass servers to search nearby. CityMate has no accounts. Chat messages are sent to Google's Gemini API to produce replies.",
   },

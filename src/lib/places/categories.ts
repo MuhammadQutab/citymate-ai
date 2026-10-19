@@ -280,3 +280,34 @@ export function overpassStatements(categories: readonly CategoryId[], spatial: s
     )
     .join("\n");
 }
+
+/**
+ * Urdu labels and everyday Urdu/Roman-Urdu words per category, used for
+ * AI-free matching of Urdu questions and for the Urdu interface.
+ */
+export const CATEGORY_URDU: Record<CategoryId, { label: string; keywords: string[] }> = {
+  food: { label: "کھانا", keywords: ["کھانا", "کھانے", "ریسٹورنٹ", "بھوک", "ناشتہ", "بریانی", "کڑاہی", "ڈھابہ", "khana", "khanay"] },
+  cafe: { label: "کیفے اور چائے", keywords: ["چائے", "کافی", "کیفے", "بیکری"] },
+  atm: { label: "اے ٹی ایم اور بینک", keywords: ["اے ٹی ایم", "بینک", "پیسے", "پیسہ", "نقد", "کیش", "paisay", "paise"] },
+  pharmacy: { label: "فارمیسی / میڈیکل اسٹور", keywords: ["دوائی", "دوا", "دوائیں", "فارمیسی", "میڈیکل سٹور", "میڈیکل اسٹور", "کیمسٹ", "dawai", "dawa"] },
+  hospital: { label: "ہسپتال اور کلینک", keywords: ["ہسپتال", "اسپتال", "کلینک", "ڈاکٹر", "بخار", "ایمرجنسی", "بیمار", "haspatal", "bukhar"] },
+  mosque: { label: "مساجد", keywords: ["مسجد", "مساجد", "نماز", "جمعہ", "masjid", "namaz"] },
+  hotel: { label: "رہائش", keywords: ["رہائش", "گیسٹ ہاؤس", "ہاسٹل", "کمرہ", "ٹھہرنے"] },
+  transport: { label: "ٹرانسپورٹ", keywords: ["بس", "ٹیکسی", "اسٹیشن", "سٹیشن", "ریلوے", "ایئرپورٹ", "اڈا", "اڈہ", "adda"] },
+  fuel: { label: "پٹرول پمپ", keywords: ["پٹرول", "پیٹرول", "ڈیزل", "سی این جی", "پمپ", "petrol"] },
+  grocery: { label: "گروسری / کریانہ", keywords: ["کریانہ", "گروسری", "سودا", "سبزی", "پھل", "سپر مارکیٹ", "مارٹ", "kiryana", "sabzi"] },
+  cash_carry: { label: "کیش اینڈ کیری", keywords: ["کیش اینڈ کیری", "ہول سیل"] },
+  plumber: { label: "پلمبر", keywords: ["پلمبر", "نلکا", "نل", "ٹونٹی", "پائپ", "لیک", "لیکیج", "رساؤ", "گیزر", "نالی", "ٹینکی", "nalka", "tonti"] },
+  electrician: { label: "الیکٹریشن", keywords: ["الیکٹریشن", "بجلی", "پنکھا", "پنکھے", "وائرنگ", "سوئچ", "ساکٹ", "یو پی ایس", "pankha", "bijli"] },
+  ac_repair: { label: "اے سی اور فریج مرمت", keywords: ["اے سی", "ایئر کنڈیشنر", "فریج", "فریزر", "ٹھنڈک", "کولنگ"] },
+  appliance_repair: { label: "الیکٹرانکس مرمت", keywords: ["واشنگ مشین", "مائیکروویو", "ٹی وی", "استری"] },
+  cleaning: { label: "صفائی اور لانڈری", keywords: ["صفائی", "لانڈری", "دھوبی", "ڈرائی کلین", "ماسی", "safai"] },
+  carpenter: { label: "بڑھئی / کارپینٹر", keywords: ["بڑھئی", "کارپینٹر", "لکڑی", "الماری", "دروازہ", "mistri"] },
+  painter: { label: "پینٹر", keywords: ["پینٹر", "رنگ", "پینٹ", "سفیدی", "رنگ و روغن"] },
+  hardware: { label: "ہارڈویئر کی دکانیں", keywords: ["ہارڈویئر", "اوزار", "کیل", "پیچ", "بلب"] },
+  appliance_store: { label: "الیکٹرانکس کی دکانیں", keywords: ["الیکٹرانکس", "گھریلو آلات"] },
+  furniture: { label: "فرنیچر اور گھریلو سامان", keywords: ["فرنیچر", "صوفہ", "گدا", "پردے", "برتن"] },
+  park: { label: "پارک", keywords: ["پارک", "باغ", "سیر"] },
+  playground: { label: "بچوں کے کھیل کی جگہ", keywords: ["جھولے", "کھیل کا میدان", "بچوں کے کھیلنے"] },
+  market: { label: "بازار اور مالز", keywords: ["بازار", "مارکیٹ", "مال", "شاپنگ"] },
+};

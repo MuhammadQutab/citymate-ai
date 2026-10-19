@@ -1,4 +1,4 @@
-import { CATEGORY_CONFIG, CATEGORY_IDS, type CategoryId } from "./categories";
+import { CATEGORY_CONFIG, CATEGORY_IDS, CATEGORY_URDU, type CategoryId } from "./categories";
 import { CITIES, type CityId } from "./cities";
 
 /**
@@ -11,11 +11,13 @@ const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 const PATTERNS = CATEGORY_IDS.map((id) => ({
   id,
-  res: CATEGORY_CONFIG[id].keywords.map((w) => new RegExp(`\\s${escape(w.toLowerCase())}s?\\s`)),
+  res: [...CATEGORY_CONFIG[id].keywords, ...CATEGORY_URDU[id].keywords].map(
+    (w) => new RegExp(`\\s${escape(w.toLowerCase())}s?\\s`),
+  ),
 }));
 
 export function matchIntent(text: string): Intent {
-  const t = ` ${text.toLowerCase().replace(/&/g, " & ").replace(/[^\p{L}\p{N}&\s]/gu, " ").replace(/\s+/g, " ")} `;
+  const t = ` ${text.toLowerCase().replace(/&/g, " & ").replace(/[^\p{L}\p{M}\p{N}&\s]/gu, " ").replace(/\s+/g, " ")} `;
   const hits: { id: CategoryId; at: number }[] = [];
   for (const { id, res } of PATTERNS) {
     let first = Infinity;

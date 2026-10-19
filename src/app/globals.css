@@ -36,6 +36,7 @@
 
   --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--font-display-face), var(--font-body), ui-sans-serif, sans-serif;
+  --font-urdu: var(--font-urdu-face), "Noto Nastaliq Urdu", "Jameel Noori Nastaleeq", "Urdu Typesetting", serif;
 
   --radius-panel: 1.5rem;
 
@@ -192,4 +193,12 @@ body {
 }
 .cm-tooltip.leaflet-tooltip-top::before {
   border-top-color: var(--color-indigo-950);
+}
+
+/* ---------- Urdu ---------- */
+/* Nastaliq needs generous line height; apply with lang="ur". */
+:lang(ur) {
+  font-family: var(--font-urdu);
+  line-height: 2.1;
+  letter-spacing: 0;
 }

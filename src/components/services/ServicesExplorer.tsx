@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
+import { useExperience } from "@/components/experience/ExperienceProvider";
 import { CityLocationBar } from "@/components/location/CityLocationBar";
 import { useGeolocation } from "@/components/location/useGeolocation";
 import { Mate, type MateState } from "@/components/mate/Mate";
@@ -21,7 +22,7 @@ const EXAMPLES = [
   "Deep clean my new flat",
 ];
 
-type View = { kind: "idle" } | { kind: "loading"; label: string } | { kind: "error"; message: string } | { kind: "done"; reply?: string; groups: ResultGroup[]; aiNotice?: string };
+type View = { kind: "idle" } | { kind: "loading"; label: string } | { kind: "error"; message: string } | { kind: "done"; reply?: string; replyLang?: "en" | "ur"; groups: ResultGroup[]; aiNotice?: string };
 
 async function fetchCategory(category: CategoryId, city: CityId, near: LatLng | null, wide = false): Promise<ResultGroup[]> {
   const params = new URLSearchParams({ category, limit: "12" });
@@ -49,11 +50,16 @@ async function fetchCategory(category: CategoryId, city: CityId, near: LatLng | 
   ];
 }
 
-async function fetchProblem(message: string, city: CityId, near: LatLng | null) {
+async function fetchProblem(message: string, city: CityId, near: LatLng | null, lang: "en" | "ur") {
   const res = await fetch("/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ message, city, near: near ? { lat: +near.lat.toFixed(4), lon: +near.lon.toFixed(4) } : undefined }),
+    body: JSON.stringify({
+      message,
+      city,
+      near: near ? { lat: +near.lat.toFixed(4), lon: +near.lon.toFixed(4) } : undefined,
+      lang: /[؀-ۿ]/.test(message) ? "ur" : lang,
+    }),
   });
   const body = await res.json();
   if (!res.ok) throw new Error(body?.message ?? "Mate couldn't answer just now.");
@@ -68,12 +74,13 @@ async function fetchProblem(message: string, city: CityId, near: LatLng | null) 
     alternativeFor: g.alternativeFor,
     note: g.note,
   }));
-  return { reply: r.reply, groups, aiNotice: r.aiNotice };
+  return { reply: r.reply, replyLang: r.lang, groups, aiNotice: r.aiNotice };
 }
 
 export function ServicesExplorer({ initialCity, initialCategory }: { initialCity: CityId; initialCategory: CategoryId | null }) {
   const [cityId, setCityId] = useState<CityId>(initialCity);
   const geo = useGeolocation();
+  const { lang, play, speak } = useExperience();
   const [problem, setProblem] = useState("");
   const [active, setActive] = useState<CategoryId | null>(initialCategory);
   const [view, setView] = useState<View>(
@@ -86,11 +93,15 @@ export function ServicesExplorer({ initialCity, initialCategory }: { initialCity
   const scrollToResults = () => resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
 
   function runCategory(category: CategoryId, city = cityId, near = geo.coords) {
+    play("tap");
     setActive(category);
     setView({ kind: "loading", label: `Finding ${CATEGORY_CONFIG[category].noun}…` });
     lastRun.current = () => runCategory(category);
     fetchCategory(category, city, near)
-      .then((groups) => setView({ kind: "done", groups }))
+      .then((groups) => {
+        setView({ kind: "done", groups });
+        play(groups.some((g) => g.places.length && !g.alternativeFor) ? "found" : "unsure");
+      })
       .catch((e: Error) => setView({ kind: "error", message: e.message }));
     scrollToResults();
   }
@@ -101,8 +112,13 @@ export function ServicesExplorer({ initialCity, initialCategory }: { initialCity
     setActive(null);
     setView({ kind: "loading", label: "Mate is working out what you need…" });
     lastRun.current = () => runProblem(msg);
-    fetchProblem(msg, city, near)
-      .then((r) => setView({ kind: "done", ...r }))
+    play("send");
+    fetchProblem(msg, city, near, lang)
+      .then((r) => {
+        setView({ kind: "done", ...r });
+        play(r.groups.some((g) => g.places.length && !g.alternativeFor) ? "found" : "unsure");
+        speak(r.reply, r.replyLang);
+      })
       .catch((e: Error) => setView({ kind: "error", message: e.message }));
     scrollToResults();
   }
@@ -157,7 +173,8 @@ export function ServicesExplorer({ initialCity, initialCategory }: { initialCity
                 value={problem}
                 onChange={(e) => setProblem(e.target.value)}
                 maxLength={MAX_MESSAGE_CHARS}
-                placeholder="e.g. My geyser isn't heating water"
+                placeholder={lang === "ur" ? "مثلاً: گیزر پانی گرم نہیں کر رہا" : "e.g. My geyser isn't heating water"}
+                dir="auto"
                 className="min-w-0 flex-1 bg-transparent py-2 text-pearl-50 placeholder:text-indigo-300 focus:outline-none"
               />
               <button
@@ -270,7 +287,13 @@ export function ServicesExplorer({ initialCity, initialCategory }: { initialCity
               <div className="mb-8 flex items-start gap-3">
                 <Mate variant="bust" state={mateState} className="h-12 w-12 shrink-0" />
                 <div>
-                  <p className="rounded-2xl rounded-tl-md bg-white/[0.07] px-4 py-3 text-pearl-50">{view.reply}</p>
+                  <p
+                    lang={view.replyLang}
+                    dir={view.replyLang === "ur" ? "rtl" : "ltr"}
+                    className="rounded-2xl rounded-tl-md bg-white/[0.07] px-4 py-3 text-pearl-50"
+                  >
+                    {view.reply}
+                  </p>
                   {view.aiNotice && <p className="mt-1 text-[11px] text-indigo-300">{view.aiNotice}</p>}
                 </div>
               </div>

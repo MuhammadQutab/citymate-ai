@@ -1,7 +1,7 @@
 import type { Content } from "@google/genai";
 import { z } from "zod";
 import { formatStraightLine } from "../geo/distance";
-import { CATEGORY_CONFIG, CATEGORY_IDS, CATEGORY_LABELS, CATEGORY_NOUNS, type CategoryId } from "../places/categories";
+import { CATEGORY_CONFIG, CATEGORY_IDS, CATEGORY_LABELS, CATEGORY_NOUNS, CATEGORY_URDU, type CategoryId } from "../places/categories";
 import { CITIES, getCity } from "../places/cities";
 import { matchIntent } from "../places/intent";
 import { searchWithAlternatives } from "../places/service";
@@ -43,7 +43,20 @@ function toContents(req: ChatRequest): Content[] {
   ];
 }
 
-async function plan(req: ChatRequest): Promise<{ plan: Plan; usedAi: boolean }> {
+export type Lang = "en" | "ur";
+
+/** Explicit choice wins; otherwise Urdu script in the message means Urdu. */
+export function detectLang(req: { lang?: Lang; message: string }): Lang {
+  return req.lang ?? (/[؀-ۿ]/.test(req.message) ? "ur" : "en");
+}
+
+function langRule(lang: Lang, fields: string): string {
+  return lang === "ur"
+    ? `\nLANGUAGE: Write ${fields} in natural, simple everyday Urdu using Urdu script (not Roman Urdu). Prefer phrasings that avoid gendered first-person verbs (e.g. "یہ رہے…", "آپ … کر سکتے ہیں").`
+    : `\nLANGUAGE: Write ${fields} in English.`;
+}
+
+async function plan(req: ChatRequest, lang: Lang): Promise<{ plan: Plan; usedAi: boolean }> {
   // Free, deterministic pre-check: skip the model call when keywords are unambiguous.
   const kw = matchIntent(req.message);
   if (kw.categories.length > 0) {
@@ -57,7 +70,7 @@ async function plan(req: ChatRequest): Promise<{ plan: Plan; usedAi: boolean }> 
     : "";
   const p = await generateJson({
     schema: PlanSchema,
-    system: PLAN_SYSTEM + contextNote,
+    system: PLAN_SYSTEM + contextNote + langRule(lang, `"reply"`),
     contents: toContents(req),
     maxOutputTokens: 200,
   });
@@ -95,7 +108,7 @@ function describe(r: Ref): string {
   return parts.join("; ");
 }
 
-async function narrateWithAi(req: ChatRequest, groups: ChatResponse["groups"], refs: Ref[]) {
+async function narrateWithAi(req: ChatRequest, groups: ChatResponse["groups"], refs: Ref[], lang: Lang) {
   const listing = groups
     .map((g, gi) => {
       const items = refs.filter((r) => r.group === gi).map(describe);
@@ -107,7 +120,7 @@ async function narrateWithAi(req: ChatRequest, groups: ChatResponse["groups"], r
     .join("\n\n");
   const out = await generateJson({
     schema: NarrationSchema,
-    system: NARRATE_SYSTEM,
+    system: NARRATE_SYSTEM + langRule(lang, `"reply" and every "why"`),
     contents: [...toContents(req).slice(0, -1), { role: "user", parts: [{ text: `${req.message}\n\n[VERIFIED RESULTS]\n${listing}` }] }],
     maxOutputTokens: 350,
   });
@@ -126,10 +139,19 @@ async function narrateWithAi(req: ChatRequest, groups: ChatResponse["groups"], r
  * Deterministic guard: OSM gives us no evidence of quality or vetting, so
  * strip endorsement words the model may add despite instructions.
  */
-const CLAIM_WORDS = /\b(verified|vetted|trusted|trustworthy|reputable|reliable|qualified|certified|licensed|professional|highly[- ]rated|top[- ]rated|best|great|excellent),?\s+/gi;
+// Negations are kept ("not verified providers" stays meaningful).
+const CLAIM_WORDS =
+  /(?<!\b(?:not|never|no|isn't|aren't)\s)\b(verified|vetted|trusted|trustworthy|reputable|reliable|qualified|certified|licensed|professional|highly[- ]rated|top[- ]rated|best|great|excellent),?\s+/gi;
+// Urdu: verified / trustworthy / reliable / best — unless negated later in the clause.
+const CLAIM_WORDS_UR = /(تصدیق شدہ|قابلِ? ?اعتماد|معتبر|مستند|بہترین)(?![^۔.،؟!]*(?:نہیں|نہ))\s*/g;
 
 export function stripClaims(text: string): string {
-  return text.replace(CLAIM_WORDS, "").replace(/\s{2,}/g, " ").replace(/\ba ([aeiou])/gi, "an $1").trim();
+  return text
+    .replace(CLAIM_WORDS, "")
+    .replace(CLAIM_WORDS_UR, "")
+    .replace(/\s{2,}/g, " ")
+    .replace(/\ba ([aeiou])/gi, "an $1")
+    .trim();
 }
 
 /** Drop repeated places, including separate OSM entries sharing a name. */
@@ -143,11 +165,24 @@ function dedupe(picks: Pick[]): Pick[] {
   });
 }
 
-function basicNarration(groups: ChatResponse["groups"]): { reply: string; picks: Pick[] } {
+function basicNarration(groups: ChatResponse["groups"], lang: Lang = "en"): { reply: string; picks: Pick[] } {
   const primary = groups.filter((g) => !g.alternativeFor);
   const found = primary.filter((g) => g.result.length);
   const missing = primary.filter((g) => !g.result.length);
   const alts = groups.filter((g) => g.alternativeFor && g.result.length);
+  if (lang === "ur") {
+    const ur = (gs: typeof groups) => gs.map((g) => CATEGORY_URDU[g.category].label).join("، ");
+    const parts: string[] = [];
+    if (found.length) parts.push(`یہ رہے قریب ترین نتائج: ${ur(found)}۔`);
+    if (missing.length) parts.push(`${ur(missing)} کے لیے نقشے پر کوئی جگہ درج نہیں ملی۔`);
+    if (alts.length) parts.push(`متبادل کے طور پر ${ur(alts)} بھی دکھائے ہیں۔ یہ تصدیق شدہ سروس فراہم کنندگان نہیں ہیں۔`);
+    const picks: Pick[] = [...found, ...alts].map((g) => ({
+      place: g.result[0],
+      why: g.alternativeFor ? `قریب ترین متبادل: ${CATEGORY_URDU[g.category].label}` : `قریب ترین: ${CATEGORY_URDU[g.category].label}`,
+      ...(g.note ? { note: g.note } : {}),
+    }));
+    return { reply: parts.join(" "), picks: picks.slice(0, 4) };
+  }
   const parts: string[] = [];
   if (found.length) {
     parts.push(
@@ -168,38 +203,51 @@ function basicNarration(groups: ChatResponse["groups"]): { reply: string; picks:
   return { reply: parts.join(" "), picks: picks.slice(0, 4) };
 }
 
-const AI_NOTICES: Record<AiUnavailableError["reason"], string> = {
-  no_key: "AI is switched off, so I'm using basic keyword search.",
-  quota: "Mate's free AI quota is used up for now, so I'm using basic keyword search.",
-  timeout: "The AI took too long, so I'm using basic keyword search.",
-  error: "The AI is unavailable right now, so I'm using basic keyword search.",
-  invalid_output: "The AI gave an unusable answer, so I'm using basic keyword search.",
+const AI_NOTICES: Record<Lang, Record<AiUnavailableError["reason"], string>> = {
+  en: {
+    no_key: "AI is switched off, so I'm using basic keyword search.",
+    quota: "Mate's free AI quota is used up for now, so I'm using basic keyword search.",
+    timeout: "The AI took too long, so I'm using basic keyword search.",
+    error: "The AI is unavailable right now, so I'm using basic keyword search.",
+    invalid_output: "The AI gave an unusable answer, so I'm using basic keyword search.",
+  },
+  ur: {
+    no_key: "اے آئی بند ہے، اس لیے سادہ تلاش استعمال ہو رہی ہے۔",
+    quota: "میٹ کا مفت اے آئی کوٹہ فی الحال ختم ہو گیا ہے، اس لیے سادہ تلاش استعمال ہو رہی ہے۔",
+    timeout: "اے آئی نے بہت دیر لگائی، اس لیے سادہ تلاش استعمال ہو رہی ہے۔",
+    error: "اے آئی ابھی دستیاب نہیں، اس لیے سادہ تلاش استعمال ہو رہی ہے۔",
+    invalid_output: "اے آئی کا جواب قابلِ استعمال نہیں تھا، اس لیے سادہ تلاش استعمال ہو رہی ہے۔",
+  },
+};
+
+const HELP_REPLY: Record<Lang, string> = {
+  en: `I can help you find ${CATEGORY_IDS.slice(0, 6).map((c) => CATEGORY_NOUNS[c]).join(", ")}, home services like plumbers and electricians, and more. Try "nearest pharmacy" or "my tap is leaking".`,
+  ur: "آپ مجھ سے کھانا، اے ٹی ایم، فارمیسی، ہسپتال، پلمبر، الیکٹریشن اور بہت کچھ ڈھونڈنے کے لیے پوچھ سکتے ہیں۔ مثلاً لکھیں: «قریب ترین فارمیسی» یا «نلکا لیک ہو رہا ہے»۔",
 };
 
 /* ---------------- RUN (Plan → Execute → Narrate) ---------------- */
 
 /** At most two model calls per message; every place shown comes from searchPlaces. */
 export async function runAgent(req: ChatRequest): Promise<ChatResponse> {
+  const lang = detectLang(req);
   let aiNotice: string | undefined;
   let aiOk = aiEnabled();
-  if (!aiOk) aiNotice = AI_NOTICES.no_key;
+  if (!aiOk) aiNotice = AI_NOTICES[lang].no_key;
 
   // PLAN
   let p: Plan;
   try {
-    p = (await plan(req)).plan;
+    p = (await plan(req, lang)).plan;
   } catch (err) {
     if (!(err instanceof AiUnavailableError)) throw err;
     aiOk = false;
-    aiNotice = AI_NOTICES[err.reason];
+    aiNotice = AI_NOTICES[lang][err.reason];
     p = { intent: "unsupported", categories: [], city: "none", reply: "" };
   }
 
   if (p.intent !== "search" || p.categories.length === 0) {
-    const reply =
-      p.reply ||
-      `I can help you find ${CATEGORY_IDS.slice(0, 6).map((c) => CATEGORY_NOUNS[c]).join(", ")} and more. Try "nearest pharmacy" or pick a category below.`;
-    return { reply, mode: aiOk ? "ai" : "basic", categories: [], picks: [], groups: [], aiNotice };
+    const reply = p.reply ? stripClaims(p.reply) : HELP_REPLY[lang];
+    return { reply, lang, mode: aiOk ? "ai" : "basic", categories: [], picks: [], groups: [], aiNotice };
   }
 
   // EXECUTE (real searches only)
@@ -235,20 +283,21 @@ export async function runAgent(req: ChatRequest): Promise<ChatResponse> {
   const refs: Ref[] = groups.flatMap((g, group) => g.result.map((place) => ({ ref: `P${++n}`, place, group })));
 
   // NARRATE
-  let narration = basicNarration(groups);
+  let narration = basicNarration(groups, lang);
   if (aiOk) {
     try {
-      narration = await narrateWithAi(req, groups, refs);
-      if (narration.picks.length === 0) narration.picks = basicNarration(groups).picks;
+      narration = await narrateWithAi(req, groups, refs, lang);
+      if (narration.picks.length === 0) narration.picks = basicNarration(groups, lang).picks;
     } catch (err) {
       if (!(err instanceof AiUnavailableError)) throw err;
       aiOk = false;
-      aiNotice = AI_NOTICES[err.reason];
+      aiNotice = AI_NOTICES[lang][err.reason];
     }
   }
 
   return {
     reply: narration.reply,
+    lang,
     mode: aiOk ? "ai" : "basic",
     categories: p.categories,
     cityId: results[0]?.cityId,

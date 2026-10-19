@@ -16,6 +16,8 @@ export const ChatRequestSchema = z.object({
   city: z.enum(cityIds).optional(),
   near: z.object({ lat: z.number().min(-90).max(90), lon: z.number().min(-180).max(180) }).optional(),
   lastCategories: z.array(z.enum(CATEGORY_IDS)).max(3).default([]),
+  /** Reply language; auto-detected from the message when omitted. */
+  lang: z.enum(["en", "ur"]).optional(),
 });
 
 export type ChatRequest = z.infer<typeof ChatRequestSchema>;
@@ -25,6 +27,7 @@ export type Pick = { place: PlaceWithDistance; why: string; note?: string };
 
 export type ChatResponse = {
   reply: string;
+  lang: "en" | "ur";
   /** "ai" = Gemini narrated; "basic" = deterministic fallback (AI off/unavailable). */
   mode: "ai" | "basic";
   categories: CategoryId[];

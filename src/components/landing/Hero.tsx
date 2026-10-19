@@ -37,6 +37,9 @@ export function Hero() {
           <span className="h-1.5 w-1.5 rounded-full bg-mint-400" /> Piloting in Islamabad, Rawalpindi & Kotli
         </motion.p>
 
+        <motion.p variants={fadeUp} lang="ur" dir="rtl" className="mb-2 text-left text-2xl text-coral-300 sm:text-3xl">
+          آپ کا شہر، آپ کی ضرورت، آپ کا ساتھی
+        </motion.p>
         <h1 className="font-display text-5xl font-extrabold leading-[1.02] tracking-tight sm:text-6xl lg:text-7xl">
           {headline.map((word, i) => (
             <motion.span
@@ -92,12 +95,20 @@ export function Hero() {
           ))}
         </motion.ul>
 
-        <motion.div variants={fadeUp} className="mt-8">
-          <Link
-            href="/explore"
-            className="inline-flex items-center gap-2 font-semibold text-mint-300 underline-offset-4 hover:underline"
-          >
-            Open the city explorer <span aria-hidden="true">→</span>
+        <motion.div variants={fadeUp} className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
+          <a href="#story" className="group inline-flex items-center gap-2 font-semibold text-pearl-50">
+            <span className="grid h-9 w-9 place-items-center rounded-full border border-white/20 transition group-hover:border-coral-400">
+              <motion.span aria-hidden="true" animate={{ y: [0, 3, 0] }} transition={{ duration: 1.6, repeat: Infinity }}>
+                ↓
+              </motion.span>
+            </span>
+            Begin Sara&apos;s story
+          </a>
+          <a href="#ask" lang="ur" className="text-lg text-coral-300 hover:text-coral-400" style={{ lineHeight: 1.6 }}>
+            اردو میں پوچھیں
+          </a>
+          <Link href="/explore" className="font-semibold text-mint-300 underline-offset-4 hover:underline">
+            Open the city explorer →
           </Link>
         </motion.div>
       </motion.div>

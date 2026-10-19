@@ -95,3 +95,21 @@ describe("stripClaims", () => {
     expect(stripClaims("A highly rated, trusted plumber")).not.toMatch(/highly rated|trusted/);
   });
 });
+
+describe("Urdu support", () => {
+  it("detects Urdu script and answers in Urdu without AI", async () => {
+    vi.stubEnv("GEMINI_API_KEY", "");
+    const res = await runAgent(req("مجھے پیسے، سر درد کی دوا اور پلمبر چاہیے", { city: "rawalpindi" }));
+    expect(res.lang).toBe("ur");
+    expect(res.categories).toEqual(["atm", "pharmacy", "plumber"]);
+    expect(res.reply).toMatch(/[؀-ۿ]/);
+    expect(res.aiNotice).toMatch(/اے آئی/);
+  });
+
+  it("keeps negated claims intact in both languages", async () => {
+    const { stripClaims } = await import("./agent");
+    expect(stripClaims("These are not verified providers.")).toBe("These are not verified providers.");
+    expect(stripClaims("یہ تصدیق شدہ سروس فراہم کنندگان نہیں ہیں۔")).toBe("یہ تصدیق شدہ سروس فراہم کنندگان نہیں ہیں۔");
+    expect(stripClaims("یہ بہترین پلمبر ہے")).toBe("یہ پلمبر ہے");
+  });
+});

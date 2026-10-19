@@ -1,7 +1,8 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { speak, stopSpeaking } from "@/lib/sound/engine";
 import { formatStraightLine } from "@/lib/geo/distance";
 import type { PlaceWithDistance } from "@/lib/places/types";
 import { CATEGORY_GLYPHS } from "@/lib/places/categories";
@@ -35,18 +36,25 @@ export function ChatThread({ messages, pending, selectedId, onPick }: Props) {
             className={m.role === "user" ? "flex justify-end" : "flex justify-start"}
           >
             {m.role === "user" ? (
-              <p className="max-w-[85%] rounded-2xl rounded-br-md bg-mint-400 px-3.5 py-2 text-sm font-medium text-indigo-950">
+              <p
+                lang={m.lang}
+                dir="auto"
+                className="max-w-[85%] rounded-2xl rounded-br-md bg-mint-400 px-3.5 py-2 text-sm font-medium text-indigo-950"
+              >
                 {m.text}
               </p>
             ) : (
               <div className="max-w-[92%] space-y-2">
-                <p
-                  className={`rounded-2xl rounded-bl-md px-3.5 py-2.5 text-sm leading-relaxed ${
+                <div
+                  className={`group relative rounded-2xl rounded-bl-md px-3.5 py-2.5 text-sm leading-relaxed ${
                     m.error ? "border border-coral-400/40 bg-coral-400/10 text-coral-300" : "bg-white/[0.07] text-pearl-50"
                   }`}
                 >
-                  {m.text}
-                </p>
+                  <p lang={m.lang} dir={m.lang === "ur" ? "rtl" : "ltr"}>
+                    {m.text}
+                  </p>
+                  {!m.error && <ListenButton text={m.text} lang={m.lang} />}
+                </div>
                 {m.picks && m.picks.length > 0 && (
                   <ul className="space-y-1.5" aria-label="Mate's picks">
                     {m.picks.map(({ place, why, note }, i) => (
@@ -75,10 +83,12 @@ export function ChatThread({ messages, pending, selectedId, onPick }: Props) {
                             </span>
                             {note && (
                               <span className="mb-0.5 block text-[10px] font-bold uppercase tracking-wider text-sunset">
-                                Alternative · not a confirmed provider
+                                {m.lang === "ur" ? "متبادل · تصدیق شدہ فراہم کنندہ نہیں" : "Alternative · not a confirmed provider"}
                               </span>
                             )}
-                            <span className="block text-xs text-indigo-200">{why}</span>
+                            <span lang={m.lang} dir="auto" className="block text-xs text-indigo-200">
+                              {why}
+                            </span>
                             {place.distanceMeters !== undefined && (
                               <span className="block text-[11px] text-mint-300">{formatStraightLine(place.distanceMeters)}</span>
                             )}
@@ -108,5 +118,38 @@ export function ChatThread({ messages, pending, selectedId, onPick }: Props) {
       )}
       <div ref={endRef} />
     </div>
+  );
+}
+
+/** Read a reply aloud with the device's voice (free, on-device). */
+function ListenButton({ text, lang }: { text: string; lang: "en" | "ur" }) {
+  const [state, setState] = useState<"idle" | "speaking" | "novoice">("idle");
+  if (typeof window !== "undefined" && !("speechSynthesis" in window)) return null;
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        if (state === "speaking") {
+          stopSpeaking();
+          setState("idle");
+          return;
+        }
+        const ok = speak(text, lang, () => setState("idle"));
+        setState(ok ? "speaking" : "novoice");
+      }}
+      className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-semibold text-mint-300 hover:text-mint-400"
+      aria-label={state === "speaking" ? "Stop reading" : "Read this reply aloud"}
+    >
+      <span aria-hidden="true">{state === "speaking" ? "■" : "🔊"}</span>
+      {state === "speaking"
+        ? "Stop"
+        : state === "novoice"
+          ? lang === "ur"
+            ? "اس ڈیوائس پر اردو آواز دستیاب نہیں"
+            : "No voice available"
+          : lang === "ur"
+            ? "سنیں"
+            : "Listen"}
+    </button>
   );
 }

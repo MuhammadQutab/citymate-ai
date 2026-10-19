@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
+import { useExperience } from "@/components/experience/ExperienceProvider";
 import { Mate } from "@/components/mate/Mate";
 import { useLocalStore } from "@/components/ui/useLocalStore";
 import { CATEGORY_CONFIG, type CategoryId } from "@/lib/places/categories";
@@ -19,6 +20,7 @@ function hrefFor(category: CategoryId, city: string) {
 
 export function NewResidentAssistant() {
   const [profile, setProfile] = useLocalStore<ResidentProfile>(STORE_KEY, EMPTY_PROFILE);
+  const { play } = useExperience();
   const [newTask, setNewTask] = useState("");
   const [confirmReset, setConfirmReset] = useState(false);
   const city = isCityId(profile.city) ? profile.city : "islamabad";
@@ -189,7 +191,12 @@ export function NewResidentAssistant() {
                     role="checkbox"
                     aria-checked={done}
                     aria-label={t.label}
-                    onClick={() => update({ done: { ...profile.done, [t.id]: !done } })}
+                    onClick={() => {
+                      const next = { ...profile.done, [t.id]: !done };
+                      const allDone = tasks.every((x) => next[x.id]);
+                      play(!done ? (allDone ? "found" : "tap") : "unsure");
+                      update({ done: next });
+                    }}
                     className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg border-2 transition ${
                       done ? "border-mint-ink bg-mint-ink text-pearl-50" : "border-pearl-200 bg-white hover:border-mint-ink"
                     }`}

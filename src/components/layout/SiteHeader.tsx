@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Logo } from "@/components/brand/Logo";
+import { LangToggle, SoundToggle } from "@/components/experience/Toggles";
 
 export const NAV = [
   { href: "/explore", label: "City Explorer", short: "Explore" },
@@ -23,7 +24,7 @@ export function SiteHeader() {
         <Logo />
       </Link>
 
-      <nav aria-label="Main" className="hidden items-center gap-1 md:flex">
+      <nav aria-label="Main" className="hidden items-center gap-1 lg:flex">
         {NAV.map((item) => {
           const active = pathname === item.href;
           return (
@@ -44,9 +45,14 @@ export function SiteHeader() {
         })}
       </nav>
 
+      <div className="hidden items-center gap-2 lg:flex">
+        <LangToggle />
+        <SoundToggle />
+      </div>
+
       <button
         type="button"
-        className="grid h-10 w-10 place-items-center rounded-full border border-white/15 md:hidden"
+        className="grid h-10 w-10 place-items-center rounded-full border border-white/15 lg:hidden"
         aria-expanded={open}
         aria-controls="mobile-nav"
         aria-label={open ? "Close menu" : "Open menu"}
@@ -65,7 +71,7 @@ export function SiteHeader() {
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
-            className="glass absolute inset-x-4 top-full rounded-panel p-2 md:hidden"
+            className="glass absolute inset-x-4 top-full rounded-panel p-2 lg:hidden"
           >
             {NAV.map((item) => (
               <Link
@@ -78,6 +84,10 @@ export function SiteHeader() {
                 {item.label}
               </Link>
             ))}
+            <div className="flex items-center justify-between gap-2 border-t border-white/10 px-2 pb-1 pt-3">
+              <LangToggle />
+              <SoundToggle />
+            </div>
           </motion.nav>
         )}
       </AnimatePresence>

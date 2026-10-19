@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
-import { Bricolage_Grotesque, Plus_Jakarta_Sans } from "next/font/google";
+import { Bricolage_Grotesque, Noto_Nastaliq_Urdu, Plus_Jakarta_Sans } from "next/font/google";
 import { QuickAsk } from "@/components/chat/QuickAsk";
+import { ExperienceProvider } from "@/components/experience/ExperienceProvider";
 import { MotionProvider } from "@/components/ui/MotionProvider";
 import "./globals.css";
 
@@ -14,6 +15,15 @@ const body = Plus_Jakarta_Sans({
   variable: "--font-body",
   subsets: ["latin"],
   display: "swap",
+});
+
+// Urdu headings and chat; not preloaded so English-only visits stay light.
+const urdu = Noto_Nastaliq_Urdu({
+  variable: "--font-urdu-face",
+  subsets: ["arabic"],
+  weight: ["400", "700"],
+  display: "swap",
+  preload: false,
 });
 
 export const metadata: Metadata = {
@@ -33,11 +43,13 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${display.variable} ${body.variable} h-full antialiased`}>
+    <html lang="en" className={`${display.variable} ${body.variable} ${urdu.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
         <MotionProvider>
-          {children}
-          <QuickAsk />
+          <ExperienceProvider>
+            {children}
+            <QuickAsk />
+          </ExperienceProvider>
         </MotionProvider>
       </body>
     </html>
