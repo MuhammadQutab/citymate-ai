@@ -20,7 +20,8 @@ export const ChatRequestSchema = z.object({
 
 export type ChatRequest = z.infer<typeof ChatRequestSchema>;
 
-export type Pick = { place: PlaceWithDistance; why: string };
+/** A recommended place. `note` is set when it's an alternative, not a provider of what was asked. */
+export type Pick = { place: PlaceWithDistance; why: string; note?: string };
 
 export type ChatResponse = {
   reply: string;
@@ -29,7 +30,17 @@ export type ChatResponse = {
   categories: CategoryId[];
   cityId?: string;
   picks: Pick[];
-  groups: { category: CategoryId; result: Pick["place"][]; notices: string[]; source: SearchResult["source"]; dataDate: string; originLabel: string }[];
+  groups: {
+    category: CategoryId;
+    result: Pick["place"][];
+    notices: string[];
+    source: SearchResult["source"];
+    dataDate: string;
+    originLabel: string;
+    /** Set when this group is an alternative suggestion for another category. */
+    alternativeFor?: CategoryId;
+    note?: string;
+  }[];
   /** Shown when the AI could not be used. */
   aiNotice?: string;
 };

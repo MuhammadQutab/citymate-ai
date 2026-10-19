@@ -1,4 +1,4 @@
-import { matchCategory } from "./categories";
+import { matchCategoryTag } from "./categories";
 import type { Place } from "./types";
 
 export type OsmElement = {
@@ -36,6 +36,38 @@ const KIND_LABELS: Record<string, string> = {
   convenience: "Convenience store",
   grocery: "Grocery",
   greengrocer: "Greengrocer",
+  wholesale: "Cash & carry",
+  plumber: "Plumber",
+  electrician: "Electrician",
+  hvac: "AC technician",
+  refrigeration: "Refrigeration technician",
+  electronics_repair: "Electronics repair",
+  repair: "Repair shop",
+  cleaning: "Cleaning service",
+  laundry: "Laundry",
+  dry_cleaning: "Dry cleaner",
+  carpenter: "Carpenter",
+  joiner: "Joiner",
+  cabinet_maker: "Cabinet maker",
+  painter: "Painter",
+  paint: "Paint shop",
+  hardware: "Hardware shop",
+  doityourself: "DIY store",
+  trade: "Trade supplies",
+  appliance: "Appliance store",
+  electronics: "Electronics store",
+  electrical: "Electrical store",
+  furniture: "Furniture store",
+  houseware: "Household goods",
+  household_linen: "Household linen",
+  interior_decoration: "Interior decoration",
+  bed: "Bedding store",
+  curtain: "Curtain shop",
+  park: "Park",
+  playground: "Playground",
+  marketplace: "Marketplace",
+  mall: "Shopping mall",
+  department_store: "Department store",
 };
 
 const OSM_ID = /^(node|way|relation)-(\d{1,15})$/;
@@ -81,14 +113,14 @@ function safeUrl(v: string | undefined): string | undefined {
 /** Convert a raw Overpass element into a Place, or null if it isn't one we support. */
 export function normalizeElement(el: OsmElement): Place | null {
   const tags = el.tags ?? {};
-  const category = matchCategory(tags);
-  if (!category) return null;
+  const match = matchCategoryTag(tags);
+  if (!match) return null;
+  const category = match.id;
   const lat = el.lat ?? el.center?.lat;
   const lon = el.lon ?? el.center?.lon;
   if (lat === undefined || lon === undefined) return null;
 
-  const rawKind =
-    tags.amenity ?? tags.tourism ?? tags.shop ?? tags.healthcare ?? tags.railway ?? tags.aeroway ?? "";
+  const rawKind = match.value;
   const name = clean(tags["name:en"]) ?? clean(tags.name) ?? null;
   const localName = clean(tags["name:ur"]);
 

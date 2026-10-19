@@ -49,7 +49,7 @@ export function ChatThread({ messages, pending, selectedId, onPick }: Props) {
                 </p>
                 {m.picks && m.picks.length > 0 && (
                   <ul className="space-y-1.5" aria-label="Mate's picks">
-                    {m.picks.map(({ place, why }, i) => (
+                    {m.picks.map(({ place, why, note }, i) => (
                       <motion.li
                         key={place.id}
                         initial={{ opacity: 0, x: -8 }}
@@ -73,6 +73,11 @@ export function ChatThread({ messages, pending, selectedId, onPick }: Props) {
                             <span className="block truncate text-sm font-semibold text-pearl-50">
                               {place.name ?? `Unnamed ${place.kind.toLowerCase()}`}
                             </span>
+                            {note && (
+                              <span className="mb-0.5 block text-[10px] font-bold uppercase tracking-wider text-sunset">
+                                Alternative · not a confirmed provider
+                              </span>
+                            )}
                             <span className="block text-xs text-indigo-200">{why}</span>
                             {place.distanceMeters !== undefined && (
                               <span className="block text-[11px] text-mint-300">{formatStraightLine(place.distanceMeters)}</span>

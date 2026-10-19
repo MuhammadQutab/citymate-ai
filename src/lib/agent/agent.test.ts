@@ -87,3 +87,11 @@ describe("ChatRequestSchema", () => {
     expect(ChatRequestSchema.safeParse({ message: "hi", city: "lahore" }).success).toBe(false);
   });
 });
+
+describe("stripClaims", () => {
+  it("removes unsupported endorsement words", async () => {
+    const { stripClaims } = await import("./agent");
+    expect(stripClaims("I found a verified technician and some great places.")).toBe("I found a technician and some places.");
+    expect(stripClaims("A highly rated, trusted plumber")).not.toMatch(/highly rated|trusted/);
+  });
+});

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Plus_Jakarta_Sans } from "next/font/google";
+import { QuickAsk } from "@/components/chat/QuickAsk";
 import { MotionProvider } from "@/components/ui/MotionProvider";
 import "./globals.css";
 
@@ -34,7 +35,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${display.variable} ${body.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
-        <MotionProvider>{children}</MotionProvider>
+        <MotionProvider>
+          {children}
+          <QuickAsk />
+        </MotionProvider>
       </body>
     </html>
   );

@@ -1,4 +1,4 @@
-import { ApiError, GoogleGenAI, type Content } from "@google/genai";
+import { ApiError, GoogleGenAI, ThinkingLevel, type Content } from "@google/genai";
 import { z } from "zod";
 
 /** Default model, verified available on the free tier (Oct 2026). Override with GEMINI_MODEL. */
@@ -41,7 +41,7 @@ export async function generateJson<T extends z.ZodType>({
   system,
   contents,
   maxOutputTokens = 400,
-  timeoutMs = 12_000,
+  timeoutMs = 18_000,
 }: JsonCall<T>): Promise<z.infer<T>> {
   const ai = getClient();
   const abort = new AbortController();
@@ -56,6 +56,8 @@ export async function generateJson<T extends z.ZodType>({
         responseJsonSchema: z.toJSONSchema(schema),
         temperature: 0.3,
         maxOutputTokens,
+        // Routing and short narration need little reasoning; minimal thinking cuts latency.
+        thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL },
         abortSignal: abort.signal,
       },
     });

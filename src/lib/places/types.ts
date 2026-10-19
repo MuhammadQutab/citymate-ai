@@ -31,6 +31,8 @@ export type SearchQuery = {
   city?: string;
   near?: LatLng;
   limit?: number;
+  /** Skip City Packs and search live OSM in a wider radius (rate-limited, slower). */
+  wide?: boolean;
 };
 
 export type SearchResult = {

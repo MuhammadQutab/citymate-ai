@@ -1,34 +1,26 @@
-import type { CategoryId } from "./categories";
+import { CATEGORY_CONFIG, CATEGORY_IDS, type CategoryId } from "./categories";
 import { CITIES, type CityId } from "./cities";
 
 /**
- * Deterministic, AI-free intent matching. Used when the AI is off/unavailable
- * and as a free pre-check before spending a model call.
+ * Deterministic, AI-free intent matching from the central taxonomy keywords.
+ * Used when the AI is off/unavailable and as a free pre-check before a model call.
  */
-const KEYWORDS: Record<CategoryId, string[]> = {
-  food: ["food", "eat", "eating", "hungry", "dinner", "lunch", "breakfast", "restaurant", "meal", "biryani", "karahi", "bbq", "burger", "pizza", "dhaba", "khana"],
-  cafe: ["cafe", "café", "coffee", "tea", "chai", "bakery", "dessert"],
-  atm: ["atm", "cash", "bank", "money", "withdraw", "paisa", "paise"],
-  pharmacy: ["pharmacy", "chemist", "medicine", "medical store", "drugstore", "dawai", "tablets"],
-  hospital: ["hospital", "clinic", "doctor", "emergency", "urgent care", "injury", "sick", "ill", "fever"],
-  mosque: ["mosque", "masjid", "pray", "prayer", "namaz", "salah", "jummah", "jumma"],
-  hotel: ["hotel", "stay", "room", "sleep", "guest house", "guesthouse", "hostel", "motel", "accommodation", "lodging"],
-  transport: ["bus", "taxi", "transport", "station", "train", "railway", "airport", "terminal", "metro", "ride"],
-  fuel: ["fuel", "petrol", "diesel", "gas station", "cng", "pump"],
-  grocery: ["grocery", "groceries", "supermarket", "mart", "convenience", "vegetables", "fruit", "kiryana", "karyana"],
-};
-
 export type Intent = { categories: CategoryId[]; cityId?: CityId; nearMe: boolean };
 
 const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
+const PATTERNS = CATEGORY_IDS.map((id) => ({
+  id,
+  res: CATEGORY_CONFIG[id].keywords.map((w) => new RegExp(`\\s${escape(w.toLowerCase())}s?\\s`)),
+}));
+
 export function matchIntent(text: string): Intent {
-  const t = ` ${text.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").replace(/\s+/g, " ")} `;
+  const t = ` ${text.toLowerCase().replace(/&/g, " & ").replace(/[^\p{L}\p{N}&\s]/gu, " ").replace(/\s+/g, " ")} `;
   const hits: { id: CategoryId; at: number }[] = [];
-  for (const [id, words] of Object.entries(KEYWORDS) as [CategoryId, string[]][]) {
+  for (const { id, res } of PATTERNS) {
     let first = Infinity;
-    for (const w of words) {
-      const m = new RegExp(`\\s${escape(w)}s?\\s`).exec(t);
+    for (const re of res) {
+      const m = re.exec(t);
       if (m && m.index < first) first = m.index;
     }
     if (first !== Infinity) hits.push({ id, at: first });

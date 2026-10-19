@@ -1,4 +1,5 @@
 import { CityBackdrop } from "@/components/brand/CityBackdrop";
+import { Flagships } from "@/components/landing/Flagships";
 import { Hero } from "@/components/landing/Hero";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
@@ -10,6 +11,7 @@ export default function Home() {
       <SiteHeader />
       <main className="relative flex flex-1 flex-col">
         <Hero />
+        <Flagships />
       </main>
       <SiteFooter />
     </div>

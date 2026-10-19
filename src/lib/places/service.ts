@@ -1,5 +1,5 @@
 import { straightLineMeters, type LatLng } from "../geo/distance";
-import { CATEGORY_NOUNS } from "./categories";
+import { CATEGORY_CONFIG, CATEGORY_NOUNS, type CategoryId } from "./categories";
 import { CITIES, cityAt, DEFAULT_CITY, getCity, inBBox, type City } from "./cities";
 import { OverpassUnavailableError } from "./overpass";
 import { parsePlaceId } from "./normalize";
@@ -9,6 +9,7 @@ import type { Place, PlaceSource, SearchQuery, SearchResult } from "./types";
 
 export const MAX_LIMIT = 60;
 const LIVE_RADII_M = [3000, 8000];
+const WIDE_RADIUS_M = 15_000;
 
 /**
  * Single entry point for place discovery. Chooses the data source:
@@ -52,7 +53,7 @@ export async function searchPlaces(q: SearchQuery): Promise<SearchResult> {
   let dataDate: string;
   let source: PlaceSource;
 
-  if (city && PACK_CITY_IDS.includes(city.id)) {
+  if (city && PACK_CITY_IDS.includes(city.id) && !q.wide) {
     ({ places, dataDate } = await cityPackProvider(city.id).search({ category: q.category, near: origin, limit }));
     source = "citypack";
   } else {
@@ -60,13 +61,17 @@ export async function searchPlaces(q: SearchQuery): Promise<SearchResult> {
       places = [];
       dataDate = new Date().toISOString();
       let usedRadius = LIVE_RADII_M[0];
-      for (const radius of LIVE_RADII_M) {
+      for (const radius of q.wide ? [WIDE_RADIUS_M] : LIVE_RADII_M) {
         usedRadius = radius;
         ({ places, dataDate } = await overpassProvider(radius).search({ category: q.category, near: origin, limit }));
         if (places.length >= 3) break;
       }
       source = "overpass";
-      notices.push(`Outside our City Packs — showing live OpenStreetMap results within ${usedRadius / 1000} km.`);
+      notices.push(
+        q.wide
+          ? `Wider search: live OpenStreetMap results within ${usedRadius / 1000} km.`
+          : `Outside our City Packs — showing live OpenStreetMap results within ${usedRadius / 1000} km.`,
+      );
     } catch (err) {
       // Live search down: fall back to the nearest City Pack if it is reasonably close.
       const fallback = nearestPackCity(origin);
@@ -86,7 +91,9 @@ export async function searchPlaces(q: SearchQuery): Promise<SearchResult> {
     .slice(0, limit);
 
   if (withDistance.length === 0) {
-    notices.unshift(`No ${label} are mapped on OpenStreetMap ${city ? `in ${city.name}` : "near this location"} yet.`);
+    notices.unshift(
+      `No ${label} are mapped on OpenStreetMap ${city ? `in ${city.name}` : "near this location"} yet. That doesn't mean none exist: many local businesses simply aren't listed online.`,
+    );
   }
 
   return { places: withDistance, source, dataDate, cityId: city?.id, origin, originLabel, notices };
@@ -113,4 +120,37 @@ export async function getPlaceById(id: string): Promise<PlaceLookup | null> {
   }
   const place = await overpassProvider(0).getById(id);
   return place ? { place, source: "overpass", dataDate: new Date().toISOString() } : null;
+}
+
+export type AlternativeResult = { category: CategoryId; note: string; result: SearchResult };
+export type ServiceSearchResult = SearchResult & {
+  category: CategoryId;
+  /** Related categories shown when real providers are scarce — never presented as providers. */
+  alternatives: AlternativeResult[];
+};
+
+const ALTERNATIVES_BELOW = 3;
+
+/**
+ * Search a category and, when few real matches exist, add clearly-labelled
+ * alternatives (e.g. hardware shops when no plumbers are mapped).
+ * Alternatives only use City Packs to stay within public Overpass usage limits.
+ */
+export async function searchWithAlternatives(q: SearchQuery): Promise<ServiceSearchResult> {
+  const primary = await searchPlaces(q);
+  const cfg = CATEGORY_CONFIG[q.category];
+  let alternatives: AlternativeResult[] = [];
+  if (cfg.alternatives && primary.places.length < ALTERNATIVES_BELOW && primary.source === "citypack") {
+    const cityId = primary.cityId;
+    alternatives = (
+      await Promise.all(
+        cfg.alternatives.map(async (a) => ({
+          category: a.id,
+          note: a.note,
+          result: await searchPlaces({ category: a.id, city: cityId, near: q.near, limit: Math.min(q.limit ?? 10, 10) }),
+        })),
+      )
+    ).filter((a) => a.result.places.length > 0);
+  }
+  return { ...primary, category: q.category, alternatives };
 }

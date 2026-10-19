@@ -4,7 +4,7 @@ import { cityAt } from "./cities";
 import { matchIntent } from "./intent";
 import { normalizeElement, normalizeElements, parsePlaceId } from "./normalize";
 import { OverpassUnavailableError, runOverpass } from "./overpass";
-import { getPlaceById, searchPlaces } from "./service";
+import { getPlaceById, searchPlaces, searchWithAlternatives } from "./service";
 
 // Tests never touch the public Overpass servers.
 vi.mock("./overpass", async (importOriginal) => {
@@ -22,7 +22,9 @@ describe("matchCategory", () => {
     expect(matchCategory({ amenity: "fast_food" })).toBe("food");
     expect(matchCategory({ amenity: "bank" })).toBe("atm");
     expect(matchCategory({ shop: "supermarket" })).toBe("grocery");
-    expect(matchCategory({ leisure: "park" })).toBeNull();
+    expect(matchCategory({ leisure: "stadium" })).toBeNull();
+    expect(matchCategory({ craft: "plumber" })).toBe("plumber");
+    expect(matchCategory({ shop: "hardware" })).toBe("hardware");
   });
 
   it("only treats muslim places of worship (or masjid-named ones) as mosques", () => {
@@ -160,5 +162,37 @@ describe("getPlaceById", () => {
     const found = await getPlaceById(r.places[0].id);
     expect(found?.place.id).toBe(r.places[0].id);
     expect(found?.source).toBe("citypack");
+  });
+});
+
+describe("problem-based intent", () => {
+  it.each([
+    ["My kitchen tap is leaking. I need someone to fix it.", ["plumber"]],
+    ["I've just moved here and need an electrician to install ceiling fans.", ["electrician"]],
+    ["My air conditioner has stopped cooling. Can you help me find a technician?", ["ac_repair"]],
+    ["I need someone to clean my new apartment.", ["cleaning"]],
+  ])("%s", (text, expected) => {
+    expect(matchIntent(text).categories).toEqual(expected);
+  });
+
+  it("splits a multi-need request into separate categories", () => {
+    const i = matchIntent("I've recently moved to Kotli. I need a plumber, a grocery store, and a shop selling home appliances.");
+    expect(i.cityId).toBe("kotli");
+    expect(i.categories).toEqual(["plumber", "grocery", "appliance_store"]);
+  });
+});
+
+describe("searchWithAlternatives", () => {
+  it("offers labelled hardware-shop alternatives when no plumbers are mapped", async () => {
+    const r = await searchWithAlternatives({ category: "plumber", city: "islamabad", limit: 5 });
+    expect(r.places.length).toBeLessThan(3);
+    expect(r.alternatives[0]?.category).toBe("hardware");
+    expect(r.alternatives[0]?.note).toMatch(/not confirmed plumbers/);
+    expect(r.notices.join(" ")).toMatch(/doesn't mean none exist/);
+  });
+
+  it("adds no alternatives when real results exist", async () => {
+    const r = await searchWithAlternatives({ category: "grocery", city: "islamabad", limit: 5 });
+    expect(r.alternatives).toEqual([]);
   });
 });

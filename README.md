@@ -39,3 +39,16 @@ src/lib/motion.ts     shared animation language
 ## Data & attribution
 
 Map data © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright), ODbL. City illustrations are original and decorative and do not depict real locations.
+
+## HTTP API (shared by web and future mobile apps)
+
+All responses are JSON. Errors: `{ error, message, issues? }` with 400 / 500 / 503.
+
+| Endpoint | Purpose |
+| --- | --- |
+| `GET /api/categories` | Taxonomy (groups, 24 categories, alternatives) and supported cities |
+| `GET /api/places?category=&city=\|lat=&lon=[&limit][&wide=1]` | Nearest real places for one category |
+| `GET /api/services?category=…` | As above, plus clearly-labelled `alternatives` when providers are scarce |
+| `POST /api/chat` `{ message, history?, city?, near?, lastCategories? }` | AI City Assistant (Plan → Execute → Narrate, ≤2 model calls) |
+
+Business logic lives in `src/lib` (`places/`, `agent/`, `resident/`, `api/`); UI in `src/components`. Add a category by editing `src/lib/places/categories.ts`, then run `npm run citypacks`.

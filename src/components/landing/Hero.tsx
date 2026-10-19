@@ -5,10 +5,12 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "motion/react";
 import { Mate, type MateState } from "@/components/mate/Mate";
-import { CATEGORY_LABELS, type CategoryId } from "@/lib/places/categories";
+import { CATEGORY_CONFIG, CATEGORY_LABELS, type CategoryId } from "@/lib/places/categories";
 import { ease, fadeUp, stagger } from "@/lib/motion";
 
-const quick: CategoryId[] = ["food", "atm", "pharmacy", "mosque", "hotel", "transport"];
+const quick: CategoryId[] = ["food", "atm", "pharmacy", "plumber", "electrician", "grocery"];
+const hrefFor = (id: CategoryId) =>
+  CATEGORY_CONFIG[id].group === "home_services" ? `/services?category=${id}` : `/explore?category=${id}`;
 
 const headline = ["Your", "City.", "Your", "Needs.", "Your", "AI", "Companion."];
 
@@ -80,7 +82,7 @@ export function Hero() {
           {quick.map((id) => (
             <li key={id}>
               <Link
-                href={`/explore?category=${id}`}
+                href={hrefFor(id)}
                 className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-indigo-200 transition hover:border-coral-400/60 hover:text-pearl-50"
               >
                 <span className="h-1.5 w-1.5 rounded-full bg-coral-400" />
