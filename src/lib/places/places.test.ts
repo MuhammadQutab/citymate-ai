@@ -100,6 +100,11 @@ describe("matchIntent", () => {
     expect(i.nearMe).toBe(true);
   });
 
+  it("recognises local city nicknames", () => {
+    expect(matchIntent("need chai in pindi").cityId).toBe("rawalpindi");
+    expect(matchIntent("atm in isloo please").cityId).toBe("islamabad");
+  });
+
   it("returns nothing for unrelated text", () => {
     expect(matchIntent("hello there").categories).toEqual([]);
   });

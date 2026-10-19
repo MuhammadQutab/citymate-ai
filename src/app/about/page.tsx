@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: "About & Data" };
 const sections = [
   {
     title: "What CityMate is",
-    body: "CityMate AI helps travellers, visitors and newcomers find useful places and essential services in unfamiliar cities. It is a non-commercial prototype, piloting first in Islamabad and Kotli.",
+    body: "CityMate AI helps travellers, visitors and newcomers find useful places and essential services in unfamiliar cities. It is a non-commercial prototype, piloting in Islamabad, Rawalpindi and Kotli (Azad Jammu & Kashmir).",
   },
   {
     title: "Where the data comes from",

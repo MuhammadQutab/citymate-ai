@@ -33,7 +33,9 @@ export function matchIntent(text: string): Intent {
     }
     if (first !== Infinity) hits.push({ id, at: first });
   }
-  const city = CITIES.find((c) => t.includes(` ${c.name.toLowerCase()} `) || t.includes(` ${c.id} `));
+  const city = CITIES.find((c) =>
+    [c.name.toLowerCase(), c.id, ...("aliases" in c ? c.aliases : [])].some((n) => t.includes(` ${n} `)),
+  );
   return {
     categories: hits.sort((a, b) => a.at - b.at).map((h) => h.id),
     cityId: city?.id,

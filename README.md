@@ -2,7 +2,7 @@
 
 **Your City. Your Needs. Your AI Companion.**
 
-A location-aware AI companion that helps travellers and newcomers find real places and essential services in Pakistani cities (pilots: Islamabad, Kotli) using OpenStreetMap data. Non-commercial prototype.
+A location-aware AI companion that helps travellers and newcomers find real places and essential services in Pakistani cities (pilots: Islamabad, Rawalpindi, Kotli) using OpenStreetMap data. Non-commercial prototype.
 
 ## Stack
 

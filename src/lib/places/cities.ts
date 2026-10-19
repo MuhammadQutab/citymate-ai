@@ -12,6 +12,8 @@ export type City = {
   zoom: number;
   /** Honest note shown when OSM coverage is known to be thin. */
   coverageNote?: string;
+  /** Local nicknames recognised in questions. */
+  aliases?: readonly string[];
 };
 
 export const CITIES = [
@@ -22,6 +24,7 @@ export const CITIES = [
     center: { lat: 33.6938, lon: 73.0652 },
     bbox: { south: 33.6, west: 72.93, north: 33.78, east: 73.22 },
     zoom: 13,
+    aliases: ["isloo", "isb"],
   },
   {
     id: "rawalpindi",
@@ -30,14 +33,16 @@ export const CITIES = [
     center: { lat: 33.5973, lon: 73.0479 },
     bbox: { south: 33.53, west: 72.98, north: 33.66, east: 73.12 },
     zoom: 13,
+    aliases: ["pindi", "rwp", "rawal pindi"],
   },
   {
     id: "kotli",
     name: "Kotli",
     region: "Azad Jammu & Kashmir",
     center: { lat: 33.5156, lon: 73.9019 },
-    bbox: { south: 33.47, west: 73.85, north: 33.56, east: 73.95 },
-    zoom: 14,
+    // Wider than the town itself: OSM coverage here is very sparse.
+    bbox: { south: 33.4, west: 73.78, north: 33.62, east: 74.02 },
+    zoom: 13,
     coverageNote:
       "Kotli is only lightly mapped on OpenStreetMap, so many real places are missing. You can help by adding them at openstreetmap.org.",
   },

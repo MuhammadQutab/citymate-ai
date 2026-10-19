@@ -32,7 +32,7 @@ export function Hero() {
           variants={fadeUp}
           className="mb-5 inline-flex items-center gap-2 rounded-full border border-mint-400/30 bg-mint-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-mint-300"
         >
-          <span className="h-1.5 w-1.5 rounded-full bg-mint-400" /> Piloting in Islamabad & Kotli
+          <span className="h-1.5 w-1.5 rounded-full bg-mint-400" /> Piloting in Islamabad, Rawalpindi & Kotli
         </motion.p>
 
         <h1 className="font-display text-5xl font-extrabold leading-[1.02] tracking-tight sm:text-6xl lg:text-7xl">

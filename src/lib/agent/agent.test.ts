@@ -74,9 +74,9 @@ describe("runAgent", () => {
 
   it("is honest when a city has no mapped results", async () => {
     vi.stubEnv("GEMINI_API_KEY", "");
-    const res = await runAgent(req("hotel in kotli"));
+    const res = await runAgent(req("pharmacy in kotli"));
     expect(res.groups[0].result).toHaveLength(0);
-    expect(res.reply).toMatch(/couldn't find any mapped places to stay/);
+    expect(res.reply).toMatch(/couldn.t find any mapped pharmacies/);
   });
 });
 
