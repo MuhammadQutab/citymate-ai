@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
 import { useLocalStore } from "@/components/ui/useLocalStore";
+import { FEATURES } from "@/lib/features";
 import { SoundEngine, speak as speakText, stopSpeaking, type Cue, type SpeakLang } from "@/lib/sound/engine";
 
 export type Lang = "en" | "ur";
@@ -38,9 +39,11 @@ export function ExperienceProvider({ children }: { children: React.ReactNode }) 
     }
   }, []);
 
-  const play = useCallback((cue: Cue) => engine.current?.play(cue), []);
+  const play = useCallback((cue: Cue) => {
+    if (FEATURES.sound) engine.current?.play(cue);
+  }, []);
   const speak = useCallback(
-    (text: string, l: SpeakLang) => (engine.current?.enabled ? speakText(text, l) : false),
+    (text: string, l: SpeakLang) => (FEATURES.sound && engine.current?.enabled ? speakText(text, l) : false),
     [],
   );
 

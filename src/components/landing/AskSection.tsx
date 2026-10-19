@@ -10,6 +10,7 @@ import { MAX_MESSAGE_CHARS } from "@/lib/agent/limits";
 import { CITIES, type CityId } from "@/lib/places/cities";
 import type { PlaceWithDistance } from "@/lib/places/types";
 import { ASK_COPY } from "@/content/landing";
+import { FEATURES } from "@/lib/features";
 import { ChapterHeading } from "./ChapterHeading";
 
 /** "Now it's your turn" — a live, bilingual conversation with Mate on the landing page. */
@@ -35,7 +36,7 @@ export function AskSection() {
       <ChapterHeading kicker={c.kicker} title={c.title} lang={lang} align="center" />
       <p lang={lang} dir={ur ? "rtl" : "ltr"} className="mx-auto mt-4 max-w-xl text-center text-indigo-200">
         {c.desc}
-        {soundOn ? c.soundOn : c.soundHint}
+        {FEATURES.sound && (soundOn ? c.soundOn : c.soundHint)}
       </p>
 
       <div className="glass mt-10 rounded-panel p-4 sm:p-6">

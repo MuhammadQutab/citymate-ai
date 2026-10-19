@@ -2,10 +2,12 @@
 
 import { motion } from "motion/react";
 import { UI_COPY } from "@/content/landing";
+import { FEATURES } from "@/lib/features";
 import { useExperience } from "./ExperienceProvider";
 
 export function SoundToggle({ className = "" }: { className?: string }) {
   const { soundOn, toggleSound, lang } = useExperience();
+  if (!FEATURES.sound) return null;
   return (
     <button
       type="button"

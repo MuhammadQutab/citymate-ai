@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { speak, stopSpeaking } from "@/lib/sound/engine";
+import { FEATURES } from "@/lib/features";
 import { formatStraightLine } from "@/lib/geo/distance";
 import type { PlaceWithDistance } from "@/lib/places/types";
 import { CATEGORY_GLYPHS } from "@/lib/places/categories";
@@ -53,7 +54,7 @@ export function ChatThread({ messages, pending, selectedId, onPick }: Props) {
                   <p lang={m.lang} dir={m.lang === "ur" ? "rtl" : "ltr"}>
                     {m.text}
                   </p>
-                  {!m.error && <ListenButton text={m.text} lang={m.lang} />}
+                  {!m.error && FEATURES.sound && <ListenButton text={m.text} lang={m.lang} />}
                 </div>
                 {m.picks && m.picks.length > 0 && (
                   <ul className="space-y-1.5" aria-label="Mate's picks">

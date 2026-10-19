@@ -62,3 +62,11 @@ Business logic lives in `src/lib` (`places/`, `agent/`, `resident/`, `api/`); UI
 - **Hardening:** zod-validated inputs, CSP and security headers, no secrets in the client, no personal data stored server-side.
 
 Run `npm test` (unit + API tests) and `npm run smoke -- <url> [--ai]` (end-to-end) before every deploy.
+
+## Deploying to Vercel (Hobby, free)
+
+1. Import this GitHub repository in Vercel (framework: Next.js; defaults are correct).
+2. Add the environment variable `GEMINI_API_KEY` (Production and Preview). Optional: `GEMINI_MODEL`.
+3. Deploy, then run `npm run smoke -- https://<your-app>.vercel.app --ai`.
+
+Notes: Node 24 (`engines`), no database, no paid services. City Packs ship inside the build. `/api/chat` allows up to 60 s (two bounded model calls). Refresh City Packs with `npm run citypacks` and redeploy (monthly is plenty).
