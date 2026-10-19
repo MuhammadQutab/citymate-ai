@@ -12,7 +12,7 @@ const sections = [
   },
   {
     title: "Where the data comes from",
-    body: "Place data comes from OpenStreetMap, collected by volunteer contributors. It reaches CityMate through the Overpass API and through prepared City Pack extracts. Coverage varies by area: some places may be missing, outdated or lack details such as opening hours.",
+    body: "Place data comes from OpenStreetMap, collected by volunteer contributors. Islamabad, Rawalpindi and Kotli use prepared City Pack snapshots. Other areas are searched live through the public Overpass API. Map tiles are provided by CARTO. Coverage varies a lot: Islamabad is well mapped, while Kotli has only a handful of places. Opening hours and phone numbers are listed for only around 5% of places.",
   },
   {
     title: "How the AI is used",
@@ -24,7 +24,7 @@ const sections = [
   },
   {
     title: "Your privacy",
-    body: "Your location is used only if you allow it, and only to find nearby places. CityMate has no accounts and does not store your location or chat history on a server. Chat messages are sent to Google's Gemini API to produce replies.",
+    body: "Your location is used only after you tap “Near me” and allow it. It is rounded to roughly 10 m before reaching our server, is never placed in a shareable link, and is not stored. Outside our City Packs, a further-rounded location (about 100 m) is sent to public Overpass servers to search nearby. CityMate has no accounts. Chat messages are sent to Google's Gemini API to produce replies.",
   },
 ];
 

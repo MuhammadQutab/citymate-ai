@@ -111,3 +111,80 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* ---------- Map (Leaflet) ---------- */
+.cm-map {
+  background: var(--color-indigo-900);
+  font-family: var(--font-sans);
+}
+
+.cm-map .leaflet-control-attribution {
+  background: rgb(20 18 58 / 0.75);
+  color: var(--color-indigo-200);
+  font-size: 10px;
+  border-top-left-radius: 8px;
+}
+.cm-map .leaflet-control-attribution a {
+  color: var(--color-mint-300);
+}
+
+.cm-pin {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  background: var(--color-coral-400);
+  border: 2px solid var(--color-pearl-50);
+  box-shadow: 0 6px 16px -4px rgb(0 0 0 / 0.6);
+  animation: cm-pin-in 420ms var(--ease-out-soft) both;
+  animation-delay: var(--cm-delay, 0ms);
+  transition: background-color 200ms, box-shadow 200ms, scale 200ms;
+}
+.cm-pin > span {
+  transform: rotate(45deg);
+  font-size: 15px;
+  line-height: 1;
+}
+.cm-pin:hover {
+  scale: 1.12;
+}
+.cm-pin--active {
+  background: var(--color-mint-400);
+  scale: 1.22;
+  box-shadow: var(--shadow-glow-mint);
+}
+@keyframes cm-pin-in {
+  from {
+    opacity: 0;
+    translate: 0 -14px;
+  }
+}
+
+.cm-user {
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  background: var(--color-mint-400);
+  border: 3px solid var(--color-pearl-50);
+  box-shadow: 0 0 0 0 rgb(61 242 194 / 0.6);
+  animation: cm-pulse 2s ease-out infinite;
+}
+@keyframes cm-pulse {
+  to {
+    box-shadow: 0 0 0 18px rgb(61 242 194 / 0);
+  }
+}
+
+.cm-tooltip.leaflet-tooltip {
+  background: var(--color-indigo-950);
+  color: var(--color-pearl-50);
+  border: 1px solid rgb(207 205 242 / 0.2);
+  border-radius: 10px;
+  font-weight: 600;
+  box-shadow: var(--shadow-float);
+}
+.cm-tooltip.leaflet-tooltip-top::before {
+  border-top-color: var(--color-indigo-950);
+}
