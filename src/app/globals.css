@@ -1,0 +1,113 @@
+@import "tailwindcss";
+
+/*
+ * CityMate AI design tokens — "Night City, Warm Guide".
+ * Indigo = brand ground, Pearl = readable surfaces,
+ * Mint = AI interactions, Coral = Mate & selection.
+ * Contrast (WCAG): mint 12.5:1 & coral 7.0:1 on indigo-950;
+ * on pearl use the *-ink shades (mint-ink 5.5:1, coral-ink 5.3:1).
+ */
+@theme {
+  --color-indigo-950: #14123a;
+  --color-indigo-900: #1e1b4f;
+  --color-indigo-800: #2a2766;
+  --color-indigo-700: #3a3685;
+  --color-indigo-600: #4e4aa6;
+  --color-indigo-400: #8c88d9;
+  --color-indigo-300: #a9a6d6;
+  --color-indigo-200: #cfcdf2;
+
+  --color-pearl-50: #f7f5f0;
+  --color-pearl-100: #eeebe3;
+  --color-pearl-200: #ddd8cc;
+  --color-pearl-500: #5b5880;
+
+  --color-mint-300: #8af7da;
+  --color-mint-400: #3df2c2;
+  --color-mint-500: #1fd6a8;
+  --color-mint-ink: #08715a;
+
+  --color-coral-300: #ffa999;
+  --color-coral-400: #ff7a66;
+  --color-coral-500: #f2604b;
+  --color-coral-ink: #b83a27;
+
+  --color-sunset: #ffb470;
+
+  --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-display-face), var(--font-body), ui-sans-serif, sans-serif;
+
+  --radius-panel: 1.5rem;
+
+  --shadow-float: 0 24px 60px -20px rgb(8 6 30 / 0.55), 0 2px 8px rgb(8 6 30 / 0.25);
+  --shadow-glow-mint: 0 0 0 1px rgb(61 242 194 / 0.35), 0 8px 32px -8px rgb(61 242 194 / 0.45);
+  --shadow-glow-coral: 0 0 0 1px rgb(255 122 102 / 0.4), 0 8px 32px -8px rgb(255 122 102 / 0.5);
+
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-float: float 7s var(--ease-out-soft) infinite alternate;
+  --animate-twinkle: twinkle 3.5s ease-in-out infinite;
+
+  @keyframes float {
+    from { transform: translateY(0); }
+    to { transform: translateY(-10px); }
+  }
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.25; }
+    50% { opacity: 1; }
+  }
+}
+
+/* Motion durations shared by CSS and Motion for React (see src/lib/motion.ts). */
+:root {
+  --dur-fast: 150ms;
+  --dur-base: 280ms;
+  --dur-slow: 600ms;
+  color-scheme: dark;
+}
+
+html {
+  background: var(--color-indigo-950);
+}
+
+body {
+  background: var(--color-indigo-950);
+  color: var(--color-pearl-50);
+  font-family: var(--font-sans);
+}
+
+::selection {
+  background: var(--color-coral-400);
+  color: var(--color-indigo-950);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-mint-400);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* Floating translucent panel used across the app. */
+@utility glass {
+  background: linear-gradient(160deg, rgb(42 39 102 / 0.72), rgb(20 18 58 / 0.78));
+  border: 1px solid rgb(207 205 242 / 0.14);
+  box-shadow: var(--shadow-float);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+}
+
+/* Readable light surface for dense content (place details, lists). */
+@utility surface-pearl {
+  background: var(--color-pearl-50);
+  color: var(--color-indigo-950);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
