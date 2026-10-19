@@ -1,5 +1,6 @@
 "use client";
 
+import { unnamedLabel } from "@/lib/places/normalize";
 import Link from "next/link";
 import { motion } from "motion/react";
 import { directionsLinks } from "@/lib/geo/directions";
@@ -41,7 +42,7 @@ export function ServiceResultCard({
         </span>
         <div className="min-w-0 flex-1">
           <p className="truncate font-semibold text-pearl-50">
-            {place.name ?? <span className="italic text-indigo-200">Unnamed {place.kind.toLowerCase()}</span>}
+            {place.name ?? <span className="italic text-indigo-200">{unnamedLabel(place.kind)}</span>}
           </p>
           <p className="truncate text-xs text-indigo-200">
             {place.kind}

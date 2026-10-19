@@ -1,3 +1,4 @@
+import { unnamedLabel } from "@/lib/places/normalize";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -110,7 +111,7 @@ export default async function PlacePage({ params, searchParams }: PageProps<"/pl
             {CATEGORY_LABELS[place.category]} · {place.kind}
           </p>
           <h1 className="mt-2 font-display text-3xl font-bold sm:text-4xl">
-            {place.name ?? <span className="italic text-pearl-500">Unnamed {place.kind.toLowerCase()}</span>}
+            {place.name ?? <span className="italic text-pearl-500">{unnamedLabel(place.kind)}</span>}
           </h1>
           {place.localName && (
             <p className="mt-1 text-lg text-pearl-500" lang="ur" dir="rtl">

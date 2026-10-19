@@ -1,5 +1,6 @@
 "use client";
 
+import { unnamedLabel } from "@/lib/places/normalize";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { useEffect, useMemo } from "react";
@@ -107,7 +108,7 @@ export default function CityMap(props: Props) {
           eventHandlers={{ click: () => onSelect?.(p.id) }}
         >
           <Tooltip direction="top" className="cm-tooltip">
-            {p.name ?? `Unnamed ${p.kind.toLowerCase()}`}
+            {p.name ?? unnamedLabel(p.kind)}
           </Tooltip>
         </Marker>
       )),

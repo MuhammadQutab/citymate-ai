@@ -1,5 +1,6 @@
 "use client";
 
+import { unnamedLabel } from "@/lib/places/normalize";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { speak, stopSpeaking } from "@/lib/sound/engine";
@@ -80,7 +81,7 @@ export function ChatThread({ messages, pending, selectedId, onPick }: Props) {
                           </span>
                           <span className="min-w-0">
                             <span className="block truncate text-sm font-semibold text-pearl-50">
-                              {place.name ?? `Unnamed ${place.kind.toLowerCase()}`}
+                              {place.name ?? unnamedLabel(place.kind)}
                             </span>
                             {note && (
                               <span className="mb-0.5 block text-[10px] font-bold uppercase tracking-wider text-sunset">

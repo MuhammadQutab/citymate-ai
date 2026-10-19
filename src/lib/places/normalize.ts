@@ -163,3 +163,8 @@ export function normalizeElements(elements: OsmElement[]): Place[] {
   }
   return out;
 }
+
+/** "Unnamed restaurant", "Unnamed ATM" — keeps acronyms intact. */
+export function unnamedLabel(kind: string): string {
+  return `Unnamed ${kind === kind.toUpperCase() ? kind : kind.toLowerCase()}`;
+}

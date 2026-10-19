@@ -209,7 +209,7 @@ export function NewResidentAssistant() {
                         strokeWidth="2.2"
                         strokeLinecap="round"
                         initial={false}
-                        animate={{ pathLength: done ? 1 : 0 }}
+                        animate={{ pathLength: done ? 1 : 0, opacity: done ? 1 : 0 }}
                         transition={{ duration: 0.25 }}
                       />
                     </motion.svg>

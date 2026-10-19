@@ -1,5 +1,6 @@
 "use client";
 
+import { unnamedLabel } from "@/lib/places/normalize";
 import Link from "next/link";
 import { motion } from "motion/react";
 import { directionsLinks } from "@/lib/geo/directions";
@@ -47,7 +48,7 @@ export function PlaceCard({ place, index, selected, onSelect, user }: Props) {
           </span>
           <span className="min-w-0 flex-1">
             <span className="block truncate font-semibold text-pearl-50">
-              {place.name ?? <span className="italic text-indigo-200">Unnamed {place.kind.toLowerCase()}</span>}
+              {place.name ?? <span className="italic text-indigo-200">{unnamedLabel(place.kind)}</span>}
             </span>
             <span className="block truncate text-xs text-indigo-200">
               {place.kind}
