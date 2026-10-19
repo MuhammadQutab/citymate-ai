@@ -1,5 +1,6 @@
 import { ApiError, GoogleGenAI, ThinkingLevel, type Content } from "@google/genai";
 import { z } from "zod";
+import { createBreaker } from "../server/guards";
 
 /** Default model, verified available on the free tier (Oct 2026). Override with GEMINI_MODEL. */
 export const DEFAULT_MODEL = "gemini-3.5-flash-lite";
@@ -15,6 +16,9 @@ export class AiUnavailableError extends Error {
 }
 
 let client: GoogleGenAI | null = null;
+
+/** Per-instance cooldown after quota/outage errors (see src/lib/server/guards.ts). */
+export const aiBreaker = createBreaker();
 
 export function aiEnabled(): boolean {
   return Boolean(process.env.GEMINI_API_KEY?.trim());
@@ -44,6 +48,7 @@ export async function generateJson<T extends z.ZodType>({
   timeoutMs = 18_000,
 }: JsonCall<T>): Promise<z.infer<T>> {
   const ai = getClient();
+  if (aiBreaker.isOpen()) throw new AiUnavailableError("quota", "cooling down after upstream errors");
   const abort = new AbortController();
   const timer = setTimeout(() => abort.abort(), timeoutMs);
   try {
@@ -72,8 +77,16 @@ export async function generateJson<T extends z.ZodType>({
     return parsed.data;
   } catch (err) {
     if (err instanceof AiUnavailableError) throw err;
-    if (abort.signal.aborted) throw new AiUnavailableError("timeout");
-    if (err instanceof ApiError && err.status === 429) throw new AiUnavailableError("quota");
+    if (abort.signal.aborted) {
+      aiBreaker.trip(15_000);
+      throw new AiUnavailableError("timeout");
+    }
+    if (err instanceof ApiError && err.status === 429) {
+      // Free quota exhausted: stop calling for a minute so users get instant basic answers.
+      aiBreaker.trip(60_000);
+      throw new AiUnavailableError("quota");
+    }
+    if (err instanceof ApiError && err.status >= 500) aiBreaker.trip(15_000);
     throw new AiUnavailableError("error", err instanceof Error ? err.message.slice(0, 120) : undefined);
   } finally {
     clearTimeout(timer);

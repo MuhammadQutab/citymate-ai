@@ -9,7 +9,8 @@
     "lint": "eslint",
     "test": "vitest run",
     "typecheck": "next typegen && tsc --noEmit",
-    "citypacks": "tsx scripts/build-citypacks.ts"
+    "citypacks": "tsx scripts/build-citypacks.ts",
+    "smoke": "node scripts/smoke.mjs"
   },
   "dependencies": {
     "@google/genai": "2.27.0",

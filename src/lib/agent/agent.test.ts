@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { runAgent } from "./agent";
+import { __resetAgentCache, runAgent } from "./agent";
 import { AiUnavailableError, generateJson } from "./gemini";
 import { ChatRequestSchema } from "./types";
 
@@ -19,6 +19,7 @@ const req = (message: string, extra: object = {}) => ChatRequestSchema.parse({ m
 beforeEach(() => {
   vi.stubEnv("GEMINI_API_KEY", "test-key");
   gen.mockReset();
+  __resetAgentCache();
 });
 afterEach(() => vi.unstubAllEnvs());
 
@@ -111,5 +112,22 @@ describe("Urdu support", () => {
     expect(stripClaims("These are not verified providers.")).toBe("These are not verified providers.");
     expect(stripClaims("یہ تصدیق شدہ سروس فراہم کنندگان نہیں ہیں۔")).toBe("یہ تصدیق شدہ سروس فراہم کنندگان نہیں ہیں۔");
     expect(stripClaims("یہ بہترین پلمبر ہے")).toBe("یہ پلمبر ہے");
+  });
+});
+
+describe("answer cache", () => {
+  it("reuses an AI answer for an identical context-free question", async () => {
+    gen.mockResolvedValue({ reply: "Here are ATMs.", picks: [{ ref: "P1", why: "Nearest" }] });
+    await runAgent(req("cash please", { city: "islamabad" }));
+    await runAgent(req("  Cash   please ", { city: "islamabad" }));
+    expect(gen).toHaveBeenCalledTimes(1);
+  });
+
+  it("never caches answers that depend on the user's location", async () => {
+    gen.mockResolvedValue({ reply: "Here are ATMs.", picks: [] });
+    const near = { lat: 33.72, lon: 73.04 };
+    await runAgent(req("cash please", { near }));
+    await runAgent(req("cash please", { near }));
+    expect(gen).toHaveBeenCalledTimes(2);
   });
 });

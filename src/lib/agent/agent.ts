@@ -6,6 +6,7 @@ import { CITIES, getCity } from "../places/cities";
 import { matchIntent } from "../places/intent";
 import { searchWithAlternatives } from "../places/service";
 import type { PlaceWithDistance } from "../places/types";
+import { createCache } from "../server/guards";
 import { AiUnavailableError, aiEnabled, generateJson } from "./gemini";
 import type { ChatRequest, ChatResponse, Pick } from "./types";
 
@@ -227,8 +228,29 @@ const HELP_REPLY: Record<Lang, string> = {
 
 /* ---------------- RUN (Plan → Execute → Narrate) ---------------- */
 
-/** At most two model calls per message; every place shown comes from searchPlaces. */
+/**
+ * Context-free questions (no history, location or prior categories) give the
+ * same answer for everyone, so AI answers are cached per instance to save quota.
+ */
+const answerCache = createCache<ChatResponse>({ ttlMs: 30 * 60_000, max: 300 });
+export const __resetAgentCache = () => answerCache.clear();
+
+function answerKey(req: ChatRequest, lang: Lang): string | null {
+  if (req.history.length || req.near || req.lastCategories.length) return null;
+  return `${lang}|${req.city ?? ""}|${req.message.toLowerCase().replace(/\s+/g, " ").trim()}`;
+}
+
 export async function runAgent(req: ChatRequest): Promise<ChatResponse> {
+  const key = answerKey(req, detectLang(req));
+  const hit = key ? answerCache.get(key) : undefined;
+  if (hit) return hit;
+  const res = await runAgentUncached(req);
+  if (key && res.mode === "ai") answerCache.set(key, res);
+  return res;
+}
+
+/** At most two model calls per message; every place shown comes from searchPlaces. */
+async function runAgentUncached(req: ChatRequest): Promise<ChatResponse> {
   const lang = detectLang(req);
   let aiNotice: string | undefined;
   let aiOk = aiEnabled();

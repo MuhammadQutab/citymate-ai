@@ -4,6 +4,7 @@ import { CATEGORY_IDS } from "../places/categories";
 import { CITIES } from "../places/cities";
 import { OverpassUnavailableError } from "../places/overpass";
 import { MAX_LIMIT } from "../places/service";
+import { clientKey, createRateLimiter } from "../server/guards";
 
 /**
  * Shared HTTP contract for web and future mobile clients.
@@ -26,10 +27,10 @@ export const SearchParamsSchema = z
 
 export function parseSearchParams(params: URLSearchParams) {
   const parsed = SearchParamsSchema.safeParse(Object.fromEntries(params));
-  if (!parsed.success) return { error: badRequest(parsed.error) } as const;
+  if (!parsed.success) return { ok: false as const, error: badRequest(parsed.error) };
   const { category, city, lat, lon, limit, wide } = parsed.data;
   const near = lat !== undefined && lon !== undefined ? { lat, lon } : undefined;
-  return { query: { category, city, near, limit, wide: Boolean(wide) } } as const;
+  return { ok: true as const, query: { category, city, near, limit, wide: Boolean(wide) } };
 }
 
 export function badRequest(err: z.ZodError) {
@@ -62,4 +63,42 @@ export function errorResponse(err: unknown, scope: string) {
 export function cacheHeaders(source: "citypack" | "overpass") {
   const maxAge = source === "citypack" ? 86_400 : 3_600;
   return { "Cache-Control": `public, s-maxage=${maxAge}, stale-while-revalidate=${maxAge}` };
+}
+
+/* ---------------- Abuse protection (best-effort; see src/lib/server/guards.ts) ---------------- */
+
+/** Chat costs model quota: ~10 messages/minute per client after a burst of 8. */
+const chatLimiter = createRateLimiter({ capacity: 8, refillPerSec: 1 / 6 });
+/** Search is cheap (City Packs + CDN cache): ~1/second after a burst of 60. */
+const searchLimiter = createRateLimiter({ capacity: 60, refillPerSec: 1 });
+
+export function rateLimit(request: Request, kind: "chat" | "search"): NextResponse<ApiError> | null {
+  const r = (kind === "chat" ? chatLimiter : searchLimiter).take(clientKey(request.headers));
+  if (r.ok) return null;
+  return NextResponse.json<ApiError>(
+    {
+      error: "rate_limited",
+      message:
+        kind === "chat"
+          ? `Mate needs a short breather. Please try again in ${r.retryAfterSec} seconds.`
+          : `Too many searches at once. Please try again in ${r.retryAfterSec} seconds.`,
+    },
+    { status: 429, headers: { "Retry-After": String(r.retryAfterSec), "Cache-Control": "no-store" } },
+  );
+}
+
+/**
+ * Browsers always send Origin on cross-site POSTs; reject those so other
+ * websites can't spend our quota. Native mobile apps send no Origin and pass.
+ */
+export function rejectCrossOrigin(request: Request): NextResponse<ApiError> | null {
+  const origin = request.headers.get("origin");
+  if (!origin) return null;
+  const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
+  try {
+    if (host && new URL(origin).host === host) return null;
+  } catch {
+    /* malformed Origin → reject */
+  }
+  return NextResponse.json<ApiError>({ error: "forbidden_origin", message: "Requests from other websites are not allowed." }, { status: 403 });
 }

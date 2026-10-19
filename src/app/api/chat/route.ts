@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { badRequest, errorResponse } from "@/lib/api/http";
+import { badRequest, errorResponse, rateLimit, rejectCrossOrigin } from "@/lib/api/http";
 import { runAgent } from "@/lib/agent/agent";
 import { ChatRequestSchema } from "@/lib/agent/types";
 
@@ -11,6 +11,8 @@ export const maxDuration = 60;
  * → ChatResponse (see src/lib/agent/types.ts). Stateless: clients keep history.
  */
 export async function POST(request: NextRequest) {
+  const blocked = rejectCrossOrigin(request) ?? rateLimit(request, "chat");
+  if (blocked) return blocked;
   let body: unknown;
   try {
     body = await request.json();

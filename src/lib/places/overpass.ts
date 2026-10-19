@@ -1,3 +1,4 @@
+import { createBreaker, createCache } from "../server/guards";
 import type { OsmElement } from "./normalize";
 
 /**
@@ -25,7 +26,18 @@ type RunOptions = { timeoutMs?: number; endpoints?: string[]; fetchImpl?: typeof
 export type OverpassResponse = { elements: OsmElement[]; osm3s?: { timestamp_osm_base?: string } };
 
 /** Run an Overpass QL query, failing over between public endpoints. */
+/** Per-instance: recent live results (CDN caching sits in front of this) and an outage cooldown. */
+const liveCache = createCache<OverpassResponse>({ ttlMs: 60 * 60_000, max: 200 });
+export const overpassBreaker = createBreaker();
+export const __resetOverpassGuards = () => {
+  liveCache.clear();
+  overpassBreaker.reset();
+};
+
 export async function runOverpass(query: string, opts: RunOptions = {}): Promise<OverpassResponse> {
+  const cached = liveCache.get(query);
+  if (cached) return cached;
+  if (overpassBreaker.isOpen()) throw new OverpassUnavailableError(["cooling down after recent failures"]);
   const { timeoutMs = 7_000, endpoints = OVERPASS_ENDPOINTS, fetchImpl = fetch } = opts;
   const attempts: string[] = [];
   for (const url of endpoints) {
@@ -46,10 +58,12 @@ export async function runOverpass(query: string, opts: RunOptions = {}): Promise
         attempts.push(`${new URL(url).host}: malformed response`);
         continue;
       }
+      liveCache.set(query, json);
       return json;
     } catch (err) {
       attempts.push(`${new URL(url).host}: ${err instanceof Error ? err.name : "error"}`);
     }
   }
+  overpassBreaker.trip(60_000);
   throw new OverpassUnavailableError(attempts);
 }
