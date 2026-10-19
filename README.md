@@ -44,7 +44,9 @@ CityMate AI is a **problem-solving companion, not another map clone**:
 |---|---|
 | ![AI chat on the City Explorer](docs/screenshots/03-explorer-ai-chat.png) **AI City Assistant:** one message, two needs (cash and dinner), real places on the map. | ![Home Services with alternatives](docs/screenshots/04-home-services-alternatives.png) **Home Services:** no plumbers are listed, so hardware shops are shown, labelled *"not a confirmed provider"*. |
 | ![New Resident checklist](docs/screenshots/05-new-resident-checklist.png) **New Resident checklist:** progress saved on the device, "Find →" on every task. | ![Urdu mode](docs/screenshots/06-urdu-mode.png) **Urdu mode:** the full landing experience in Urdu Nastaliq. |
-| ![Story landing](docs/screenshots/02-story.png) **Story-driven landing:** *Sara's first night* explains the product chapter by chapter. | <img src="docs/screenshots/07-mobile-explorer.png" alt="Mobile explorer" width="260"> <img src="docs/screenshots/08-mobile-ask-urdu.png" alt="Mobile Urdu ask" width="260"> **Mobile:** map with bottom sheet; asking Mate in Urdu. |
+| ![Story landing](docs/screenshots/02-story.png) **Story-driven landing:** *Sara's first night* explains the product chapter by chapter. | <img src="docs/screenshots/07-mobile-explorer.png" alt="Mobile explorer" width="260"> <img src="docs/screenshots/08-mobile-ask-urdu.png" alt="Mobile Urdu ask" width="260"> 
+
+**Mobile:** map with bottom sheet; asking Mate in Urdu. |
 
 ---
 
