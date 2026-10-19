@@ -118,6 +118,11 @@ body {
   font-family: var(--font-sans);
 }
 
+/* Night-theme the light OSM tiles: invert, restore hues, then tint toward indigo. */
+.cm-map .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.88) saturate(0.55) sepia(0.15) hue-rotate(200deg);
+}
+
 .cm-map .leaflet-control-attribution {
   background: rgb(20 18 58 / 0.75);
   color: var(--color-indigo-200);

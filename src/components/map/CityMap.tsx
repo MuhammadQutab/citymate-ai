@@ -9,12 +9,11 @@ import { CATEGORY_GLYPHS, type CategoryId } from "@/lib/places/categories";
 import type { PlaceWithDistance } from "@/lib/places/types";
 
 /**
- * CARTO "Dark Matter" basemap over OpenStreetMap data — free for
- * non-commercial use with attribution. Geography is always real.
+ * Standard OpenStreetMap tiles (no key; light prototype use per the OSMF tile
+ * policy). Darkened via CSS (.cm-map .leaflet-tile-pane) for the night theme.
  */
-const TILE_URL = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
-const TILE_ATTRIBUTION =
-  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
+const TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
+const TILE_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 
 export type MapPadding = { topLeft: [number, number]; bottomRight: [number, number] };
 
@@ -123,7 +122,7 @@ export default function CityMap(props: Props) {
       className={`cm-map h-full w-full ${className}`}
       attributionControl
     >
-      <TileLayer url={TILE_URL} attribution={TILE_ATTRIBUTION} subdomains="abcd" maxZoom={19} detectRetina />
+      <TileLayer url={TILE_URL} attribution={TILE_ATTRIBUTION} maxZoom={19} />
       {markers}
       {user && <Marker position={[user.lat, user.lon]} icon={userIcon} title="Your approximate location" keyboard={false} />}
       <Controller {...props} fit={fit} />

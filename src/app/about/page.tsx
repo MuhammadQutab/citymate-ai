@@ -12,7 +12,7 @@ const sections = [
   },
   {
     title: "Where the data comes from",
-    body: "Place data comes from OpenStreetMap, collected by volunteer contributors. Islamabad, Rawalpindi and Kotli use prepared City Pack snapshots. Other areas are searched live through the public Overpass API. Map tiles are provided by CARTO. Coverage varies a lot: Islamabad is well mapped, while Kotli has only a handful of places. Opening hours and phone numbers are listed for only around 5% of places.",
+    body: "Place data comes from OpenStreetMap, collected by volunteer contributors. Islamabad, Rawalpindi and Kotli use prepared City Pack snapshots. Other areas are searched live through the public Overpass API. Map tiles come from the OpenStreetMap Foundation. Coverage varies a lot: Islamabad is well mapped, while Kotli has only a handful of places. Opening hours and phone numbers are listed for only around 5% of places.",
   },
   {
     title: "How the AI is used",
