@@ -9,23 +9,17 @@ export const metadata: Metadata = { title: "Explore" };
 
 export default async function ExplorePage({ searchParams }: PageProps<"/explore">) {
   const { q, category, city } = await searchParams;
-  const query = typeof q === "string" ? q.trim().slice(0, 300) : "";
+  const query = typeof q === "string" ? q.trim().slice(0, 500) : "";
+  // Instant, free first guess so the map fills while Mate thinks.
   const intent = query ? matchIntent(query) : null;
 
   const initialCategory = isCategoryId(category) ? category : (intent?.categories[0] ?? null);
   const initialCity = isCityId(city) ? city : (intent?.cityId ?? DEFAULT_CITY);
-  const alsoMatched = intent?.categories.filter((c) => c !== initialCategory) ?? [];
 
   return (
     <div className="relative flex h-dvh flex-col overflow-hidden">
       <SiteHeader />
-      <ExploreWorkspace
-        initialCity={initialCity}
-        initialCategory={initialCategory}
-        initialQuery={query}
-        alsoMatched={alsoMatched}
-        queryUnmatched={!!intent && intent.categories.length === 0}
-      />
+      <ExploreWorkspace initialCity={initialCity} initialCategory={initialCategory} initialQuery={query} />
     </div>
   );
 }

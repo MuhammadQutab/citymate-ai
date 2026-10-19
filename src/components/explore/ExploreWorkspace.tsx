@@ -9,7 +9,11 @@ import type { MapPadding } from "@/components/map/CityMap";
 import type { LatLng } from "@/lib/geo/distance";
 import { CATEGORY_GLYPHS, CATEGORY_IDS, CATEGORY_LABELS, CATEGORY_NOUNS, type CategoryId } from "@/lib/places/categories";
 import { CITIES, getCity, type CityId } from "@/lib/places/cities";
-import type { SearchResult } from "@/lib/places/types";
+import type { PlaceWithDistance, SearchResult } from "@/lib/places/types";
+import type { ChatResponse } from "@/lib/agent/types";
+import { ChatThread } from "@/components/chat/ChatThread";
+import { useMateChat } from "@/components/chat/useMateChat";
+import { MAX_MESSAGE_CHARS } from "@/lib/agent/limits";
 import { PlaceCard } from "./PlaceCard";
 
 const CityMap = dynamic(() => import("@/components/map/CityMap"), {
@@ -26,10 +30,8 @@ type LocationState =
 type Props = {
   initialCity: CityId;
   initialCategory: CategoryId | null;
+  /** Question typed on the landing page; sent to Mate on arrival. */
   initialQuery: string;
-  /** Categories matched from the query (beyond the first, which is preselected). */
-  alsoMatched: CategoryId[];
-  queryUnmatched: boolean;
 };
 
 const dateFmt = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric" });
@@ -50,7 +52,7 @@ function useIsDesktop() {
 
 type Response = { key: string; result?: SearchResult; error?: string };
 
-export function ExploreWorkspace({ initialCity, initialCategory, initialQuery, alsoMatched, queryUnmatched }: Props) {
+export function ExploreWorkspace({ initialCity, initialCategory, initialQuery }: Props) {
   const router = useRouter();
   const desktop = useIsDesktop();
   const [cityId, setCityId] = useState<CityId>(initialCity);
@@ -61,9 +63,32 @@ export function ExploreWorkspace({ initialCity, initialCategory, initialQuery, a
   const [sheetOpen, setSheetOpen] = useState(false);
   const [retry, setRetry] = useState(0);
   const listRef = useRef<HTMLUListElement>(null);
+  const [draft, setDraft] = useState("");
+  const [typing, setTyping] = useState(false);
+  /** Place to select once its category's results have loaded (from a chat pick). */
+  const pendingSelect = useRef<string | null>(null);
 
   const city = getCity(cityId)!;
   const user = location.status === "on" ? location.coords : null;
+
+  const onChatResult = useCallback((res: ChatResponse) => {
+    if (res.cityId && CITIES.some((c) => c.id === res.cityId)) setCityId(res.cityId as CityId);
+    if (res.categories[0]) setCategory(res.categories[0]);
+  }, []);
+  const chat = useMateChat(onChatResult);
+
+  const ask = useCallback(
+    (text: string) => chat.send(text, { city: cityId, near: user, lastCategories: category ? [category] : [] }),
+    [chat, cityId, user, category],
+  );
+
+  // Hand the landing-page question to Mate once on arrival.
+  const askedInitial = useRef(false);
+  useEffect(() => {
+    if (!initialQuery || askedInitial.current) return;
+    askedInitial.current = true;
+    void ask(initialQuery);
+  }, [initialQuery, ask]);
 
   // Keep shareable state (never location) in the URL.
   useEffect(() => {
@@ -99,7 +124,9 @@ export function ExploreWorkspace({ initialCity, initialCategory, initialQuery, a
       })
       .then((data) => {
         setResponse({ key: requestKey, result: data });
-        setSelectedId(null);
+        const want = pendingSelect.current;
+        pendingSelect.current = null;
+        setSelectedId(want && data.places.some((p) => p.id === want) ? want : null);
         if (data.cityId && CITIES.some((c) => c.id === data.cityId)) setCityId(data.cityId as CityId);
       })
       .catch((err: unknown) => {
@@ -147,19 +174,35 @@ export function ExploreWorkspace({ initialCity, initialCategory, initialQuery, a
     ? { topLeft: [440, 60], bottomRight: [60, 60] }
     : { topLeft: [30, 30], bottomRight: [30, 260] };
 
-  const mateState: MateState = loading
+  const pickPlace = useCallback(
+    (place: PlaceWithDistance) => {
+      if (place.category === category && result?.places.some((p) => p.id === place.id)) {
+        setSelectedId(place.id);
+        setSheetOpen(false);
+      } else {
+        pendingSelect.current = place.id;
+        setCategory(place.category);
+      }
+    },
+    [category, result],
+  );
+
+  const mateState: MateState = chat.pending || loading
     ? "thinking"
-    : error
-      ? "unsure"
-      : result && result.places.length > 0
-        ? "found"
-        : result
-          ? "unsure"
-          : "idle";
+    : typing
+      ? "listening"
+      : error
+        ? "unsure"
+        : result && result.places.length > 0
+          ? "found"
+          : result
+            ? "unsure"
+            : "idle";
 
   const places = useMemo(() => result?.places ?? [], [result]);
 
   const greeting = (() => {
+    if (chat.pending) return "Thinking about that…";
     if (loading) return `Looking for ${category ? CATEGORY_NOUNS[category] : "places"}…`;
     if (error) return "I couldn't reach the map data just now.";
     if (result && category) {
@@ -167,7 +210,6 @@ export function ExploreWorkspace({ initialCity, initialCategory, initialQuery, a
         ? `Found ${result.places.length} ${CATEGORY_NOUNS[category]} nearest ${result.originLabel}.`
         : `I couldn't find any mapped ${CATEGORY_NOUNS[category]} here.`;
     }
-    if (queryUnmatched) return "I couldn't match that to a category yet. Pick one below.";
     return "What do you need nearby?";
   })();
 
@@ -216,27 +258,37 @@ export function ExploreWorkspace({ initialCity, initialCategory, initialQuery, a
             </div>
           </div>
 
-          {initialQuery && (
-            <p className="rounded-xl bg-white/5 px-3 py-2 text-xs text-indigo-200">
-              You asked: <span className="text-pearl-50">&ldquo;{initialQuery}&rdquo;</span>
-              {alsoMatched.length > 0 && (
-                <>
-                  <br />I also noticed you may need:{" "}
-                  {alsoMatched.map((c, i) => (
-                    <button
-                      key={c}
-                      type="button"
-                      onClick={() => setCategory(c)}
-                      className="font-semibold text-coral-300 underline-offset-2 hover:underline"
-                    >
-                      {CATEGORY_LABELS[c]}
-                      {i < alsoMatched.length - 1 ? ", " : ""}
-                    </button>
-                  ))}
-                </>
-              )}
-            </p>
-          )}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!draft.trim() || chat.pending) return;
+              void ask(draft);
+              setDraft("");
+            }}
+            className="flex items-center gap-2 rounded-full border border-white/15 bg-indigo-950/60 p-1 pl-4 focus-within:border-mint-400/60"
+          >
+            <label htmlFor="ask-mate" className="sr-only">
+              Ask Mate
+            </label>
+            <input
+              id="ask-mate"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onFocus={() => setTyping(true)}
+              onBlur={() => setTyping(false)}
+              maxLength={MAX_MESSAGE_CHARS}
+              placeholder="Ask Mate, e.g. “chemist open late?”"
+              autoComplete="off"
+              className="min-w-0 flex-1 bg-transparent py-1.5 text-sm text-pearl-50 placeholder:text-indigo-300 focus:outline-none"
+            />
+            <button
+              type="submit"
+              disabled={!draft.trim() || chat.pending}
+              className="shrink-0 rounded-full bg-mint-400 px-4 py-1.5 text-sm font-bold text-indigo-950 transition hover:bg-mint-300 disabled:opacity-40"
+            >
+              Ask
+            </button>
+          </form>
 
           <div className="flex gap-2">
             <label className="sr-only" htmlFor="city">
@@ -299,6 +351,7 @@ export function ExploreWorkspace({ initialCity, initialCategory, initialQuery, a
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto p-4">
+          <ChatThread messages={chat.messages} pending={chat.pending} selectedId={selectedId} onPick={pickPlace} />
           {result?.notices.map((n) => (
             <p key={n} className="mb-3 rounded-xl border border-coral-400/30 bg-coral-400/10 px-3 py-2 text-xs text-coral-300">
               {n}
