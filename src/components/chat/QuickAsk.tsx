@@ -157,12 +157,14 @@ export function QuickAsk() {
         aria-label={open ? "Close Ask Mate" : "Open Ask Mate chat"}
         whileHover={{ scale: 1.06 }}
         whileTap={{ scale: 0.94 }}
-        className="flex items-center gap-2 rounded-full bg-coral-400 py-2 pl-2 pr-4 font-bold text-indigo-950 shadow-glow-coral"
+        className="flex items-center gap-2 rounded-full bg-coral-400 p-1.5 font-bold text-indigo-950 shadow-glow-coral sm:py-2 sm:pe-4 sm:ps-2"
       >
         <span className="grid h-10 w-10 place-items-center overflow-hidden rounded-full bg-indigo-950">
           <Mate variant="bust" state={open ? "listening" : "idle"} className="h-10 w-10" />
         </span>
-        <span lang={lang}>{open ? t.close : t.open}</span>
+        <span lang={lang} className="hidden sm:inline">
+          {open ? t.close : t.open}
+        </span>
       </motion.button>
     </div>
   );

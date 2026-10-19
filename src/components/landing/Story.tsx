@@ -2,12 +2,14 @@
 
 import { motion, useScroll, useSpring } from "motion/react";
 import { useRef } from "react";
+import { useExperience } from "@/components/experience/ExperienceProvider";
 import { Mate } from "@/components/mate/Mate";
+import { STORY_COPY, type Lang } from "@/content/landing";
 import { ease } from "@/lib/motion";
 import { ChapterHeading } from "./ChapterHeading";
 
 /**
- * "Sara's first night" — an illustrative story (not a real person) that walks
+ * "Sara's first night": an illustrative story (not a real person) that walks
  * visitors through what CityMate does, chapter by chapter, as they scroll.
  */
 const reveal = {
@@ -16,33 +18,35 @@ const reveal = {
   viewport: { once: true, margin: "-80px" },
 } as const;
 
-function Scene({ children, label }: { children: React.ReactNode; label: string }) {
+function Scene({ children, label, caption, lang }: { children: React.ReactNode; label: string; caption: string; lang: Lang }) {
   return (
     <motion.figure
       {...reveal}
       transition={{ duration: 0.8, ease, delay: 0.15 }}
+      lang={lang}
+      dir={lang === "ur" ? "rtl" : "ltr"}
       className="glass relative overflow-hidden rounded-panel p-5 sm:p-6"
       aria-label={label}
     >
       <div aria-hidden="true" className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-mint-400/10 blur-3xl" />
       <div className="relative">{children}</div>
-      <figcaption className="relative mt-4 text-[10px] uppercase tracking-widest text-indigo-300">Illustration</figcaption>
+      <figcaption className="relative mt-4 text-[10px] uppercase tracking-widest text-indigo-300">{caption}</figcaption>
     </motion.figure>
   );
 }
 
 function Chapter({
-  n,
-  ur,
-  en,
-  children,
+  lang,
+  kicker,
+  title,
+  body,
   scene,
   flip,
 }: {
-  n: number;
-  ur: string;
-  en: string;
-  children: React.ReactNode;
+  lang: Lang;
+  kicker: string;
+  title: string;
+  body: string[];
   scene: React.ReactNode;
   flip?: boolean;
 }) {
@@ -51,9 +55,18 @@ function Chapter({
       {/* node on the story thread */}
       <span aria-hidden="true" className="absolute -left-6 top-20 hidden h-3 w-3 -translate-x-1/2 rounded-full bg-mint-400 shadow-glow-mint md:block" />
       <div className={flip ? "md:order-2" : ""}>
-        <ChapterHeading kicker={`Chapter ${n}`} ur={ur} en={en} />
-        <motion.div {...reveal} transition={{ duration: 0.7, ease, delay: 0.1 }} className="mt-5 space-y-3 text-lg leading-relaxed text-indigo-200">
-          {children}
+        <ChapterHeading kicker={kicker} title={title} lang={lang} />
+        <motion.div
+          key={lang}
+          {...reveal}
+          transition={{ duration: 0.7, ease, delay: 0.1 }}
+          lang={lang}
+          dir={lang === "ur" ? "rtl" : "ltr"}
+          className="mt-5 space-y-3 text-lg leading-relaxed text-indigo-200"
+        >
+          {body.map((p) => (
+            <p key={p}>{p}</p>
+          ))}
         </motion.div>
       </div>
       <div className={flip ? "md:order-1" : ""}>{scene}</div>
@@ -61,16 +74,16 @@ function Chapter({
   );
 }
 
-const needs = [
-  { g: "🏧", t: "Cash", ur: "پیسے" },
-  { g: "💊", t: "Headache medicine", ur: "سر درد کی دوا" },
-  { g: "🔧", t: "Someone to fix a tap", ur: "پلمبر" },
-];
+const NEED_GLYPHS = ["🏧", "💊", "🔧"];
+const RESULT_GLYPHS = ["🏧", "💊"];
 
 export function Story() {
+  const { lang } = useExperience();
+  const c = STORY_COPY[lang];
   const ref = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start 70%", "end 60%"] });
   const thread = useSpring(scrollYProgress, { stiffness: 80, damping: 20 });
+  const [ch1, ch2, ch3, ch4] = c.chapters;
 
   return (
     <div ref={ref} className="relative mx-auto w-full max-w-6xl px-4 sm:px-8 md:pl-14">
@@ -80,16 +93,15 @@ export function Story() {
       </div>
 
       <Chapter
-        n={1}
-        ur="رات کے دس بجے، ایک نیا شہر"
-        en="10 pm. A new city."
+        lang={lang}
+        {...ch1}
         scene={
-          <Scene label="Sara's three needs">
-            <p className="mb-4 text-sm text-indigo-200">Sara&apos;s list tonight</p>
+          <Scene lang={lang} label={c.listTitle} caption={c.illustration}>
+            <p className="mb-4 text-sm text-indigo-200">{c.listTitle}</p>
             <ul className="space-y-3">
-              {needs.map((n, i) => (
+              {c.needs.map((n, i) => (
                 <motion.li
-                  key={n.t}
+                  key={n}
                   initial={{ opacity: 0, x: 30, rotate: 2 }}
                   whileInView={{ opacity: 1, x: 0, rotate: 0 }}
                   viewport={{ once: true }}
@@ -97,88 +109,67 @@ export function Story() {
                   className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-3"
                 >
                   <span className="text-2xl" aria-hidden="true">
-                    {n.g}
+                    {NEED_GLYPHS[i]}
                   </span>
-                  <span className="flex-1 font-semibold text-pearl-50">{n.t}</span>
-                  <span lang="ur" className="text-sm text-coral-300">
-                    {n.ur}
-                  </span>
+                  <span className="flex-1 font-semibold text-pearl-50">{n}</span>
                 </motion.li>
               ))}
             </ul>
           </Scene>
         }
-      >
-        <p>
-          Sara has just moved to Rawalpindi for a new job. Her phone is on 12%, the shops are closing, and she doesn&apos;t
-          know a single street yet.
-        </p>
-        <p>
-          She needs three things: cash, something for a headache, and someone to fix the tap dripping in her new flat.
-        </p>
-      </Chapter>
+      />
 
       <Chapter
-        n={2}
+        lang={lang}
         flip
-        ur="ایک سوال، تین ضرورتیں"
-        en="One question. Three needs."
+        {...ch2}
         scene={
-          <Scene label="Sara asks Mate in Urdu">
+          <Scene lang={lang} label={c.question} caption={c.illustration}>
             <div className="flex justify-end">
               <motion.p
                 {...reveal}
                 transition={{ delay: 0.3 }}
-                lang="ur"
-                dir="rtl"
-                className="max-w-[85%] rounded-2xl rounded-br-md bg-mint-400 px-4 py-2 text-indigo-950"
+                className="max-w-[85%] rounded-2xl rounded-ee-md bg-mint-400 px-4 py-2 text-indigo-950"
               >
-                مجھے پیسے، سر درد کی دوا اور پلمبر چاہیے
+                {c.question}
               </motion.p>
             </div>
             <div className="mt-4 flex items-start gap-3">
               <Mate variant="bust" state="thinking" className="h-12 w-12 shrink-0" />
               <div className="flex flex-wrap gap-2 pt-2">
-                {["🏧 ATMs & Banks", "💊 Pharmacies", "🔧 Plumbers"].map((c, i) => (
+                {c.chips.map((chip, i) => (
                   <motion.span
-                    key={c}
+                    key={chip}
                     initial={{ opacity: 0, scale: 0.6 }}
                     whileInView={{ opacity: 1, scale: 1 }}
                     viewport={{ once: true }}
                     transition={{ type: "spring", stiffness: 300, damping: 18, delay: 0.8 + i * 0.2 }}
                     className="rounded-full bg-coral-400 px-3 py-1.5 text-xs font-bold text-indigo-950"
                   >
-                    {c}
+                    {chip}
                   </motion.span>
                 ))}
               </div>
             </div>
           </Scene>
         }
-      >
-        <p>She types it the way she&apos;d say it, in Urdu. No menus, no hunting through categories.</p>
-        <p>Mate understands that one sentence holds three separate needs, and searches for each of them.</p>
-      </Chapter>
+      />
 
       <Chapter
-        n={3}
-        ur="صرف سچی معلومات"
-        en="Only real places. Honestly."
+        lang={lang}
+        {...ch3}
         scene={
-          <Scene label="Honest results with a labelled alternative">
+          <Scene lang={lang} label={c.altText} caption={c.illustration}>
             <ul className="space-y-2.5">
-              {[
-                { g: "🏧", t: "ATM", d: "≈ 350 m away (straight line)" },
-                { g: "💊", t: "Pharmacy", d: "≈ 600 m away (straight line)" },
-              ].map((r, i) => (
+              {c.results.map((r, i) => (
                 <motion.li
                   key={r.t}
                   {...reveal}
                   transition={{ delay: 0.3 + i * 0.15 }}
                   className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.05] p-3"
                 >
-                  <span className="grid h-9 w-9 place-items-center rounded-xl bg-coral-400/90" aria-hidden="true">
-                    {r.g}
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-coral-400/90" aria-hidden="true">
+                    {RESULT_GLYPHS[i]}
                   </span>
                   <span>
                     <span className="block font-semibold">{r.t}</span>
@@ -187,47 +178,38 @@ export function Story() {
                 </motion.li>
               ))}
               <motion.li {...reveal} transition={{ delay: 0.7 }} className="rounded-2xl border border-dashed border-white/15 p-3 text-sm text-indigo-200">
-                No plumbers are listed nearby.
+                {c.noPlumber}
               </motion.li>
               <motion.li {...reveal} transition={{ delay: 0.9 }} className="flex items-center gap-3 rounded-2xl border border-sunset/30 bg-sunset/[0.06] p-3">
-                <span className="grid h-9 w-9 place-items-center rounded-xl bg-sunset/80" aria-hidden="true">
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-sunset/80" aria-hidden="true">
                   🔩
                 </span>
                 <span>
-                  <span className="block text-[10px] font-bold uppercase tracking-wider text-sunset">Alternative · not a confirmed provider</span>
-                  <span className="block font-semibold">Hardware shop that sells plumbing parts</span>
+                  <span className="block text-[10px] font-bold uppercase tracking-wider text-sunset">{c.altLabel}</span>
+                  <span className="block font-semibold">{c.altText}</span>
                 </span>
               </motion.li>
             </ul>
           </Scene>
         }
-      >
-        <p>
-          Mate shows real ATMs and pharmacies from OpenStreetMap, with honest straight-line distances.
-        </p>
-        <p>
-          No plumbers are listed nearby, and Mate says so plainly. Instead it suggests hardware shops that sell parts,
-          clearly labelled as alternatives. <span className="text-pearl-50">Nothing is ever invented.</span>
-        </p>
-      </Chapter>
+      />
 
       <Chapter
-        n={4}
+        lang={lang}
         flip
-        ur="نیا شہر، اپنا سا لگنے لگا"
-        en="And the new city starts to feel like home."
+        {...ch4}
         scene={
-          <Scene label="Sara's settling-in checklist">
-            <p className="mb-3 text-sm font-semibold text-pearl-50">Settling-in checklist</p>
+          <Scene lang={lang} label={c.checklistTitle} caption={c.illustration}>
+            <p className="mb-3 text-sm font-semibold text-pearl-50">{c.checklistTitle}</p>
             <ul className="space-y-2">
-              {["Find a grocery store", "Locate the nearest pharmacy", "Find a park for Sunday walks", "Find an electrician"].map((t, i) => (
+              {c.tasks.map((t, i) => (
                 <li key={t} className="flex items-center gap-3 text-sm">
                   <motion.span
                     initial={{ backgroundColor: "rgba(255,255,255,0.05)" }}
                     whileInView={{ backgroundColor: i < 3 ? "#3df2c2" : "rgba(255,255,255,0.05)" }}
                     viewport={{ once: true }}
                     transition={{ delay: 0.5 + i * 0.35 }}
-                    className="grid h-5 w-5 place-items-center rounded-md border border-white/20 text-[11px] font-bold text-indigo-950"
+                    className="grid h-5 w-5 shrink-0 place-items-center rounded-md border border-white/20 text-[11px] font-bold text-indigo-950"
                     aria-hidden="true"
                   >
                     {i < 3 ? "✓" : ""}
@@ -247,13 +229,7 @@ export function Story() {
             </div>
           </Scene>
         }
-      >
-        <p>
-          By the weekend Sara has ticked off most of her settling-in checklist: groceries, a pharmacy, a park for Sunday
-          walks.
-        </p>
-        <p>Mate remembers her progress on her own phone. No account, no sign-up.</p>
-      </Chapter>
+      />
     </div>
   );
 }

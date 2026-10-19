@@ -6,6 +6,8 @@ import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Logo } from "@/components/brand/Logo";
 import { LangToggle, SoundToggle } from "@/components/experience/Toggles";
+import { useExperience } from "@/components/experience/ExperienceProvider";
+import { NAV_COPY, UI_COPY } from "@/content/landing";
 
 export const NAV = [
   { href: "/explore", label: "City Explorer", short: "Explore" },
@@ -17,6 +19,9 @@ export const NAV = [
 export function SiteHeader() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const { lang } = useExperience();
+  const label = (href: string) => NAV_COPY[lang][href];
+  const navLang = { lang, style: lang === "ur" ? { lineHeight: 1.9 } : undefined };
 
   return (
     <header className="relative z-[1000] mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-8">
@@ -39,7 +44,7 @@ export function SiteHeader() {
               {active && (
                 <motion.span layoutId="nav-pill" className="absolute inset-0 -z-10 rounded-full bg-white/10" transition={{ type: "spring", stiffness: 400, damping: 32 }} />
               )}
-              {item.label}
+              <span {...navLang}>{label(item.href)}</span>
             </Link>
           );
         })}
@@ -55,7 +60,7 @@ export function SiteHeader() {
         className="grid h-10 w-10 place-items-center rounded-full border border-white/15 lg:hidden"
         aria-expanded={open}
         aria-controls="mobile-nav"
-        aria-label={open ? "Close menu" : "Open menu"}
+        aria-label={open ? UI_COPY[lang].menuClose : UI_COPY[lang].menuOpen}
         onClick={() => setOpen((o) => !o)}
       >
         <span aria-hidden="true" className="text-lg leading-none">
@@ -81,7 +86,7 @@ export function SiteHeader() {
                 aria-current={pathname === item.href ? "page" : undefined}
                 className={`block rounded-xl px-4 py-3 font-medium ${pathname === item.href ? "bg-white/10 text-pearl-50" : "text-indigo-200"}`}
               >
-                {item.label}
+                <span {...navLang}>{label(item.href)}</span>
               </Link>
             ))}
             <div className="flex items-center justify-between gap-2 border-t border-white/10 px-2 pb-1 pt-3">

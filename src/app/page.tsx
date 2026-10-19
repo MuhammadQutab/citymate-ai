@@ -19,10 +19,8 @@ async function cityStats(): Promise<CityStat[]> {
         id: c.id,
         name: c.name,
         nameUr: c.nameUr,
-        region: c.region,
         places: places.length,
-        named: places.filter((p) => p.name).length,
-        note: "coverageNote" in c ? "Only lightly mapped so far. Help by adding places on OpenStreetMap." : undefined,
+        thin: "coverageNote" in c,
       };
     }),
   );

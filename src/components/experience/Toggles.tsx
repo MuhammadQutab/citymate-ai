@@ -1,10 +1,11 @@
 "use client";
 
 import { motion } from "motion/react";
+import { UI_COPY } from "@/content/landing";
 import { useExperience } from "./ExperienceProvider";
 
 export function SoundToggle({ className = "" }: { className?: string }) {
-  const { soundOn, toggleSound } = useExperience();
+  const { soundOn, toggleSound, lang } = useExperience();
   return (
     <button
       type="button"
@@ -25,7 +26,9 @@ export function SoundToggle({ className = "" }: { className?: string }) {
           />
         ))}
       </span>
-      {soundOn ? "Sound on" : "Sound off"}
+      <span lang={lang} style={lang === "ur" ? { lineHeight: 1.6 } : undefined}>
+        {soundOn ? UI_COPY[lang].soundOn : UI_COPY[lang].soundOff}
+      </span>
     </button>
   );
 }

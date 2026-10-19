@@ -9,12 +9,8 @@ import { Mate } from "@/components/mate/Mate";
 import { MAX_MESSAGE_CHARS } from "@/lib/agent/limits";
 import { CITIES, type CityId } from "@/lib/places/cities";
 import type { PlaceWithDistance } from "@/lib/places/types";
+import { ASK_COPY } from "@/content/landing";
 import { ChapterHeading } from "./ChapterHeading";
-
-const PROMPTS = {
-  en: ["I need cash and dinner in Islamabad", "My AC has stopped cooling", "Somewhere for kids to play in Pindi"],
-  ur: ["اسلام آباد میں قریب ترین فارمیسی", "میرا نلکا لیک ہو رہا ہے", "راولپنڈی میں بچوں کے لیے پارک"],
-};
 
 /** "Now it's your turn" — a live, bilingual conversation with Mate on the landing page. */
 export function AskSection() {
@@ -32,13 +28,14 @@ export function AskSection() {
   };
   const openPlace = (p: PlaceWithDistance) => router.push(`/place/${p.id}`);
   const ur = lang === "ur";
+  const c = ASK_COPY[lang];
 
   return (
     <section id="ask" className="relative mx-auto w-full max-w-4xl scroll-mt-24 px-4 py-20 sm:px-8" aria-label="Ask Mate in English or Urdu">
-      <ChapterHeading kicker="Your turn" ur="اب آپ کی باری" en="Now ask Mate yourself" align="center" />
-      <p className="mx-auto mt-4 max-w-xl text-center text-indigo-200">
-        Ask in English or Urdu. Mate answers in your language and shows only real places.
-        {soundOn ? " Mate will read the answer aloud." : " Turn sound on to hear Mate read the answer aloud."}
+      <ChapterHeading kicker={c.kicker} title={c.title} lang={lang} align="center" />
+      <p lang={lang} dir={ur ? "rtl" : "ltr"} className="mx-auto mt-4 max-w-xl text-center text-indigo-200">
+        {c.desc}
+        {soundOn ? c.soundOn : c.soundHint}
       </p>
 
       <div className="glass mt-10 rounded-panel p-4 sm:p-6">
@@ -82,7 +79,7 @@ export function AskSection() {
         <div className="mt-5 max-h-[420px] min-h-[120px] overflow-y-auto">
           {chat.messages.length === 0 && (
             <ul className="flex flex-wrap gap-2" dir={ur ? "rtl" : "ltr"}>
-              {PROMPTS[lang].map((q) => (
+              {c.prompts.map((q) => (
                 <li key={q}>
                   <button
                     type="button"
@@ -107,7 +104,7 @@ export function AskSection() {
           className="mt-4 flex items-center gap-2 rounded-full border border-white/15 bg-indigo-950/60 p-1.5 pl-5 focus-within:border-mint-400/60"
         >
           <label htmlFor="ask-input" className="sr-only">
-            {ur ? "اپنا سوال لکھیں" : "Your question"}
+            {c.label}
           </label>
           <input
             id="ask-input"
@@ -116,7 +113,7 @@ export function AskSection() {
             maxLength={MAX_MESSAGE_CHARS}
             dir="auto"
             lang={lang}
-            placeholder={ur ? "اپنا سوال اردو یا انگریزی میں لکھیں…" : "Type in English or Urdu…"}
+            placeholder={c.placeholder}
             autoComplete="off"
             className="min-w-0 flex-1 bg-transparent py-2 text-pearl-50 placeholder:text-indigo-300 focus:outline-none"
           />
@@ -126,7 +123,7 @@ export function AskSection() {
             lang={lang}
             className="shrink-0 rounded-full bg-mint-400 px-5 py-2.5 text-sm font-bold text-indigo-950 transition hover:bg-mint-300 disabled:opacity-40"
           >
-            {ur ? "پوچھیں" : "Ask"}
+            {c.ask}
           </button>
         </form>
       </div>
